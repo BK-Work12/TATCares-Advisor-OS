@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700;800&family=Poppins:wght@700&display=swap");
 @import "tailwindcss";
 
 :root {
@@ -9,8 +10,140 @@
   --brand-700: #0e7490;
   --brand-soft: rgba(34, 211, 238, 0.14);
   --brand-ring: rgba(34, 211, 238, 0.45);
+  --tat-page-bg: #f7f5f2;
+  --tat-card-bg: #ffffff;
+  --tat-border: #e7e3dd;
+  --tat-primary-red: #c63d2f;
+  --tat-red-tint: #fdebe8;
+  --tat-teal: #2f7d79;
+  --tat-teal-tint: #e8f3f1;
+  --tat-deep-teal: #1f5e5b;
+  --tat-text-primary: #0d1117;
+  --tat-text-secondary: #374151;
+  --tat-text-muted: #4b5563;
 }
 
 body {
   margin: 0;
+  background: var(--tat-page-bg);
+  color: var(--tat-text-primary);
+  font-family: "Open Sans", sans-serif;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.tat-login-page {
+  background: var(--tat-page-bg);
+}
+
+.tat-login-page h1 {
+  font-family: "Poppins", sans-serif;
+}
+
+.tat-google-btn {
+  border-color: var(--tat-border);
+}
+
+.tat-google-btn:hover {
+  background: var(--tat-teal-tint);
+  border-color: var(--tat-teal);
+  color: var(--tat-deep-teal);
+}
+
+.tat-divider {
+  position: relative;
+}
+
+.tat-divider::before,
+.tat-divider::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 28%;
+  border-top: 1px solid var(--tat-border);
+}
+
+.tat-divider::before {
+  left: 0;
+}
+
+.tat-divider::after {
+  right: 0;
+}
+
+.tat-field-label {
+  color: var(--tat-text-muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.tat-input-wrap,
+.tat-language-select {
+  border-color: var(--tat-border);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tat-input-wrap:focus-within,
+.tat-language-select:focus-visible {
+  border-color: var(--tat-teal);
+  box-shadow: 0 0 0 3px var(--tat-teal-tint);
+}
+
+.tat-checkbox {
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 4px;
+  border: 1.5px solid var(--tat-border);
+  background: white;
+  display: grid;
+  place-items: center;
+  margin: 0;
+}
+
+.tat-checkbox:checked {
+  background: var(--tat-teal);
+  border-color: var(--tat-teal);
+}
+
+.tat-checkbox:checked::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background: no-repeat center/contain
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10'%3E%3Cpath d='M1 5l3 3 7-7' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.tat-signin-btn {
+  color: #ffffff;
+  background: var(--tat-primary-red);
+}
+
+.tat-signin-btn:hover:enabled {
+  filter: brightness(0.96);
+}
+
+.tat-signin-btn:disabled {
+  background: var(--tat-border);
+  color: var(--tat-text-muted);
+  cursor: not-allowed;
+}
+
+.tat-success-tile {
+  background: var(--tat-teal);
+  opacity: 0;
+  transform: translateY(8px) scale(0.98);
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity 0.25s ease, transform 0.25s ease, max-height 0.25s ease, margin-top 0.25s ease;
+}
+
+.tat-success-tile.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  max-height: 52px;
+  margin-top: 0;
 }
