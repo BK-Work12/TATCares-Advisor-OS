@@ -11,6 +11,7 @@ import {
   X,
 } from 'lucide-react';
 import BillingScreen from './BillingScreen';
+import ClientWorkspaceScreen from './ClientWorkspaceScreen';
 import DashboardScreen from './DashboardScreen';
 import MeetingsScreen from './MeetingsScreen';
 import NotificationsScreen from './NotificationsScreen';
@@ -24,6 +25,7 @@ const Sidebar = ({ activeScreen, onScreenChange, isOpen, onClose }) => {
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
         { id: 'pipeline', label: 'Pipeline Board', icon: ListTodo, badge: '26' },
+        { id: 'client', label: 'Client Workspace', icon: FileText },
       ],
     },
     {
@@ -223,11 +225,24 @@ const TopBar = ({ title, onScreenChange, onOpenSidebar }) => (
 export default function TATCaresDashboard() {
   const [activeScreen, setActiveScreen] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState(null);
 
   const handleScreenChange = (screen) => {
     setActiveScreen(screen);
     setIsSidebarOpen(false);
   };
+
+  const handleOpenClientWorkspace = (clientData) => {
+    setSelectedClient(clientData);
+    setActiveScreen('client');
+  };
+
+  const screenTitle =
+    activeScreen === 'dashboard'
+      ? 'Dashboard'
+      : activeScreen === 'client'
+        ? 'Client Workspace'
+        : activeScreen.charAt(0).toUpperCase() + activeScreen.slice(1);
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: COLORS.bg }}>
@@ -240,17 +255,23 @@ export default function TATCaresDashboard() {
 
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
         <TopBar
-          title={activeScreen === 'dashboard' ? 'Dashboard' : activeScreen.charAt(0).toUpperCase() + activeScreen.slice(1)}
+          title={screenTitle}
           onScreenChange={handleScreenChange}
           onOpenSidebar={() => setIsSidebarOpen(true)}
         />
 
         <div className="flex-1 overflow-y-auto" style={{ background: COLORS.bg }}>
           {activeScreen === 'dashboard' && <DashboardScreen />}
-          {activeScreen === 'pipeline' && <PipelineBoardScreen />}
+          {activeScreen === 'pipeline' && <PipelineBoardScreen onOpenClientWorkspace={handleOpenClientWorkspace} />}
           {activeScreen === 'notifications' && <NotificationsScreen />}
           {activeScreen === 'meetings' && <MeetingsScreen />}
           {activeScreen === 'billing' && <BillingScreen />}
+          {activeScreen === 'client' && (
+            <ClientWorkspaceScreen
+              client={selectedClient}
+              onBackToPipeline={() => handleScreenChange('pipeline')}
+            />
+          )}
         </div>
       </div>
     </div>

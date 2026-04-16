@@ -395,13 +395,14 @@ function matchesSearch(card, searchValue) {
 	return [card.name, card.meta, card.action].some((value) => value.toLowerCase().includes(query));
 }
 
-function PipelineCard({ card }) {
+function PipelineCard({ card, onClick }) {
 	const tierStyle = TIER_STYLES[card.tier] || TIER_STYLES.T1;
 	const actionStyle = ACTION_STYLES[card.actionTone] || ACTION_STYLES.ok;
 	const daysColor = card.stuck ? COLORS.red : COLORS.textMuted;
 
 	return (
 		<div
+			onClick={onClick}
 			className="rounded-xl border bg-white p-3 transition"
 			style={{
 				borderColor: COLORS.border,
@@ -473,7 +474,7 @@ function PipelineCard({ card }) {
 	);
 }
 
-export default function PipelineBoardScreen() {
+export default function PipelineBoardScreen({ onOpenClientWorkspace }) {
 	const [activeFilter, setActiveFilter] = useState('All');
 	const [searchValue, setSearchValue] = useState('');
 	const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
@@ -556,6 +557,25 @@ export default function PipelineBoardScreen() {
 	};
 
 	const totalCount = columns.reduce((sum, column) => sum + column.displayCount, 0);
+
+	const openClientWorkspace = (card, column) => {
+		if (!onOpenClientWorkspace) {
+			return;
+		}
+
+		onOpenClientWorkspace({
+			name: card.name,
+			initials: card.initials,
+			tier: card.tier,
+			stage: column.title,
+			status: card.action,
+			score: typeof card.score === 'number' ? card.score : null,
+			avatarColor: card.avatarColor,
+			meta: card.meta,
+			days: card.days,
+			actionTone: card.actionTone,
+		});
+	};
 
 	return (
 		<div className="flex h-full flex-col" style={{ background: COLORS.bg }}>
@@ -650,7 +670,11 @@ export default function PipelineBoardScreen() {
 
 							<div className="flex min-h-20 flex-1 flex-col gap-2 py-2.5 lg:overflow-y-auto">
 								{filteredCards.map((card) => (
-									<PipelineCard key={`${column.id}-${card.name}`} card={card} />
+									<PipelineCard
+										key={`${column.id}-${card.name}`}
+										card={card}
+										onClick={() => openClientWorkspace(card, column)}
+									/>
 								))}
 
 								{column.id === 'active-subscribers' && activeFilter === 'All' && !searchValue.trim() && column.summaryCard && (
