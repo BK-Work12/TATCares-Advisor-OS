@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import {
   ArrowRight,
   Bell,
+  Mail,
+  Users,
   FileText,
   LayoutGrid,
   ListTodo,
   CreditCard,
+  Lock,
   Menu,
   Search,
   X,
@@ -13,9 +16,13 @@ import {
 import BillingScreen from './BillingScreen';
 import ClientWorkspaceScreen from './ClientWorkspaceScreen';
 import DashboardScreen from './DashboardScreen';
+import ClientListScreen from './ClientListScreen';
+import EmailScreen from './EmailScreen';
 import MeetingsScreen from './MeetingsScreen';
 import NotificationsScreen from './NotificationsScreen';
 import PipelineBoardScreen from './PipelineBoardScreen';
+import ReportsScreen from './ReportsScreen';
+import StrategyLibraryView from './StrategyLibraryView';
 import { COLORS } from './tatcaresShared';
 
 const Sidebar = ({ activeScreen, onScreenChange, isOpen, onClose }) => {
@@ -25,19 +32,27 @@ const Sidebar = ({ activeScreen, onScreenChange, isOpen, onClose }) => {
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
         { id: 'pipeline', label: 'Pipeline Board', icon: ListTodo, badge: '26' },
-        { id: 'client', label: 'Client Workspace', icon: FileText },
+        { id: 'clients', label: 'Client List', icon: Users },
       ],
     },
     {
       title: 'Communication',
       items: [
         { id: 'notifications', label: 'Notifications', icon: Bell, badge: '3' },
+        { id: 'email', label: 'Email', icon: Mail },
         { id: 'meetings', label: 'Meetings', icon: FileText, badge: '3' },
       ],
     },
     {
       title: 'Operations',
-      items: [{ id: 'billing', label: 'Billing', icon: CreditCard }],
+      items: [
+        { id: 'billing', label: 'Billing', icon: CreditCard },
+        { id: 'reports', label: 'Reports', icon: FileText },
+      ],
+    },
+    {
+      title: 'Resources',
+      items: [{ id: 'strategy', label: 'Strategy Library', icon: FileText }],
     },
   ];
 
@@ -117,6 +132,30 @@ const Sidebar = ({ activeScreen, onScreenChange, isOpen, onClose }) => {
                 </button>
               );
             })}
+          </div>
+        ))}
+      </div>
+
+      <div
+        className="mx-2.5 mb-2 rounded-[10px] px-3 py-2.5 lg:mx-2"
+        style={{ background: 'rgba(0,0,0,0.15)' }}
+      >
+        <div
+          className="mb-2 text-[9px] font-extrabold uppercase lg:hidden xl:block"
+          style={{ color: 'rgba(255,255,255,0.2)', letterSpacing: '0.1em' }}
+        >
+          Advisor Only
+        </div>
+
+        {['Proposal Builder', 'Tax Plan Builder'].map((label) => (
+          <div
+            key={label}
+            className="flex items-center gap-2 py-1 text-[11px] lg:justify-center xl:justify-start"
+            style={{ color: 'rgba(255,255,255,0.2)' }}
+            title={label}
+          >
+            <Lock size={13} strokeWidth={1.75} style={{ color: 'rgba(255,255,255,0.2)' }} />
+            <span className="lg:hidden xl:block">{label}</span>
           </div>
         ))}
       </div>
@@ -240,8 +279,12 @@ export default function TATCaresDashboard() {
   const screenTitle =
     activeScreen === 'dashboard'
       ? 'Dashboard'
+      : activeScreen === 'clients'
+        ? 'Client List'
       : activeScreen === 'client'
         ? 'Client Workspace'
+      : activeScreen === 'strategy'
+        ? 'Strategy Library'
         : activeScreen.charAt(0).toUpperCase() + activeScreen.slice(1);
 
   return (
@@ -263,9 +306,13 @@ export default function TATCaresDashboard() {
         <div className="flex-1 overflow-y-auto" style={{ background: COLORS.bg }}>
           {activeScreen === 'dashboard' && <DashboardScreen />}
           {activeScreen === 'pipeline' && <PipelineBoardScreen onOpenClientWorkspace={handleOpenClientWorkspace} />}
+          {activeScreen === 'clients' && <ClientListScreen onOpenClientWorkspace={handleOpenClientWorkspace} />}
           {activeScreen === 'notifications' && <NotificationsScreen />}
+          {activeScreen === 'email' && <EmailScreen />}
           {activeScreen === 'meetings' && <MeetingsScreen />}
           {activeScreen === 'billing' && <BillingScreen />}
+          {activeScreen === 'reports' && <ReportsScreen />}
+          {activeScreen === 'strategy' && <StrategyLibraryView />}
           {activeScreen === 'client' && (
             <ClientWorkspaceScreen
               client={selectedClient}
