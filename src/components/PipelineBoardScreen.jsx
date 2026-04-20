@@ -2,7 +2,52 @@ import React, { useState } from 'react';
 import { Plus, Search } from 'lucide-react';
 import { COLORS, cardShadow } from './tatcaresShared';
 
-const FILTERS = ['All', 'Needs Action', 'T1', 'T2', 'T3'];
+const QUICK_FILTERS = ['All', 'Needs Action', 'My Stages (1-3)'];
+
+const DETAIL_STAGES = [
+	'New Leads',
+	'Ashley Qualified',
+	'Intake In Progress',
+	'Advisor Review',
+	'Proposal Building',
+	'Proposal Sent',
+	'Active Subscribers',
+	'Renewal Decision',
+];
+
+const SUB_STATUS_OPTIONS = {
+	'New Leads': ['Unworked', 'Assigned to RM', 'First Outreach Attempted', 'No Response', 'Disqualified'],
+	'Ashley Qualified': ['Qualified - Pending RM Outreach', 'Contact Made', 'Waiting on Client Response', 'Ready for Intake'],
+	'Intake In Progress': ['Intake Started', 'Questionnaire Pending', 'Documents Pending', 'Questionnaire Received', 'Intake Complete'],
+	'Advisor Review': ['Pending Advisor Review', 'Advisor Reviewing', 'Returned to RM for Follow-Up', 'Review Complete'],
+	'Proposal Building': ['Proposal Drafting', 'Waiting on Internal Input', 'Under Final Review', 'Ready to Send'],
+	'Proposal Sent': ['Sent - Awaiting Review', 'Follow-Up Scheduled', 'Client Reviewing', 'Declined Proposal'],
+	'Active Subscribers': ['Newly Activated', 'Active - Healthy', 'Low Engagement', 'At Risk'],
+	'Renewal Decision': ['Renewal Upcoming', 'Renewal Outreach Started', 'Pending Client Decision', 'Renewed'],
+};
+
+const CARD_DIRECTORY = {
+	'Marcus Johnson': { advisor: 'Yvonne Hollis-Cobb', location: 'Katy' },
+	'Rachel Torres': { advisor: 'David Reyes', location: 'Downtown Houston' },
+	'Brian Wallace': { advisor: 'David Reyes', location: 'Downtown Houston' },
+	'Tina Brooks': { advisor: 'Yvonne Hollis-Cobb', location: 'Katy' },
+	'Kevin Marsh': { advisor: 'David Reyes', location: 'Downtown Houston' },
+	'Sandra Kim': { advisor: 'Yvonne Hollis-Cobb', location: 'Katy' },
+	'Lisa Nguyen': { advisor: 'David Reyes', location: 'Downtown Houston' },
+	'Omar Patel': { advisor: 'Priya Shankar', location: 'Katy' },
+	'Priya Sharma': { advisor: 'Priya Shankar', location: 'Katy' },
+	'David Okonkwo': { advisor: 'Yvonne Hollis-Cobb', location: 'Katy' },
+	'James Park': { advisor: 'Priya Shankar', location: 'Downtown Houston' },
+	'Angela Reeves': { advisor: 'Priya Shankar', location: 'Downtown Houston' },
+	'Jordan Crawford': { advisor: 'Yvonne Hollis-Cobb', location: 'Katy' },
+	'Robert Chen': { advisor: 'David Reyes', location: 'Downtown Houston' },
+	'Nina Foster': { advisor: 'Yvonne Hollis-Cobb', location: 'Katy' },
+	'Carol Williams': { advisor: 'Yvonne Hollis-Cobb', location: 'Katy' },
+	'Diane Moore': { advisor: 'David Reyes', location: 'Downtown Houston' },
+	'Derek Wilson': { advisor: 'Yvonne Hollis-Cobb', location: 'Katy' },
+	'Melissa Grant': { advisor: 'Priya Shankar', location: 'Katy' },
+	'Henry Ellis': { advisor: 'Yvonne Hollis-Cobb', location: 'Katy' },
+};
 
 const TIER_STYLES = {
 	T1: { badgeBackground: '#EEF3FC', badgeColor: '#2C5F7F' },
@@ -383,7 +428,7 @@ function matchesFilter(card, activeFilter) {
 		return card.actionTone === 'urgent' || card.actionTone === 'warn';
 	}
 
-	return card.tier === activeFilter;
+	return true;
 }
 
 function matchesSearch(card, searchValue) {
@@ -392,7 +437,17 @@ function matchesSearch(card, searchValue) {
 	}
 
 	const query = searchValue.toLowerCase();
-	return [card.name, card.meta, card.action].some((value) => value.toLowerCase().includes(query));
+	return [card.name, card.meta, card.action, card.advisor, card.location].some((value) => (value || '').toLowerCase().includes(query));
+}
+
+function getCardContext(card, columnIndex) {
+	const known = CARD_DIRECTORY[card.name] || {};
+	return {
+		...card,
+		advisor: card.advisor || known.advisor || 'Unassigned',
+		location: card.location || known.location || 'Katy',
+		isOwnedStage: columnIndex <= 2,
+	};
 }
 
 function PipelineCard({ card, onClick }) {
@@ -474,9 +529,16 @@ function PipelineCard({ card, onClick }) {
 	);
 }
 
-export default function PipelineBoardScreen({ onOpenClientWorkspace }) {
+export default function PipelineBoardScreen({ onScreenChange }) {
 	const [activeFilter, setActiveFilter] = useState('All');
+	const [advisorFilter, setAdvisorFilter] = useState('');
+	const [locationFilter, setLocationFilter] = useState('');
+	const [tierFilter, setTierFilter] = useState('');
 	const [searchValue, setSearchValue] = useState('');
+	const [selectedCard, setSelectedCard] = useState(null);
+	const [detailSubStatus, setDetailSubStatus] = useState('');
+	const [detailMoveStage, setDetailMoveStage] = useState('');
+	const [detailNotes, setDetailNotes] = useState('');
 	const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
 	const [leadForm, setLeadForm] = useState({
 		firstName: '',
@@ -490,6 +552,33 @@ export default function PipelineBoardScreen({ onOpenClientWorkspace }) {
 		notes: '',
 	});
 	const [columns, setColumns] = useState(INITIAL_COLUMNS);
+
+	const enrichedColumns = columns.map((column, columnIndex) => ({
+		...column,
+		cards: column.cards.map((card) => getCardContext(card, columnIndex)),
+	}));
+
+	const filteredColumns = enrichedColumns.map((column) => ({
+		...column,
+		cards: column.cards.filter((card) => {
+			if (!matchesFilter(card, activeFilter) || !matchesSearch(card, searchValue)) {
+				return false;
+			}
+			if (activeFilter === 'My Stages (1-3)' && !card.isOwnedStage) {
+				return false;
+			}
+			if (advisorFilter && card.advisor !== advisorFilter) {
+				return false;
+			}
+			if (locationFilter && card.location !== locationFilter) {
+				return false;
+			}
+			if (tierFilter && card.tier !== tierFilter) {
+				return false;
+			}
+			return true;
+		}),
+	}));
 
 	const resetLeadForm = () => {
 		setLeadForm({
@@ -556,29 +645,118 @@ export default function PipelineBoardScreen({ onOpenClientWorkspace }) {
 		handleCloseAddLead();
 	};
 
-	const totalCount = columns.reduce((sum, column) => sum + column.displayCount, 0);
+	const totalCount = enrichedColumns.reduce((sum, column) => sum + column.cards.length, 0);
+	const filteredCount = filteredColumns.reduce((sum, column) => sum + column.cards.length, 0);
+	const needsActionCount = filteredColumns.reduce(
+		(sum, column) => sum + column.cards.filter((card) => card.actionTone === 'urgent' || card.actionTone === 'warn').length,
+		0,
+	);
+	const renewalCount = filteredColumns.reduce(
+		(sum, column) => sum + (column.id === 'renewal-decision' ? column.cards.length : 0),
+		0,
+	);
 
 	const openClientWorkspace = (card, column) => {
-		if (!onOpenClientWorkspace) {
+		const stage = column.title;
+		setSelectedCard({ ...card, stage });
+		setDetailSubStatus(card.subStatus || (SUB_STATUS_OPTIONS[stage] || ['Unworked'])[0]);
+		setDetailMoveStage('');
+		setDetailNotes(card.note || '');
+	};
+
+	const closeDetailPanel = () => {
+		setSelectedCard(null);
+		setDetailMoveStage('');
+	};
+
+	const getSelectedCardMatcher = (card) => (candidate) =>
+		candidate.name === card.name && candidate.meta === card.meta && candidate.tier === card.tier;
+
+	const updateSelectedCardAcrossColumns = (updater) => {
+		if (!selectedCard) {
 			return;
 		}
 
-		onOpenClientWorkspace({
-			name: card.name,
-			initials: card.initials,
-			tier: card.tier,
-			stage: column.title,
-			status: card.action,
-			score: typeof card.score === 'number' ? card.score : null,
-			avatarColor: card.avatarColor,
-			meta: card.meta,
-			days: card.days,
-			actionTone: card.actionTone,
+		const matcher = getSelectedCardMatcher(selectedCard);
+		setColumns((prevColumns) =>
+			prevColumns.map((column) => ({
+				...column,
+				cards: column.cards.map((card) => (matcher(card) ? updater(card) : card)),
+			})),
+		);
+	};
+
+	const handleMoveStage = () => {
+		if (!selectedCard || !detailMoveStage || detailMoveStage === selectedCard.stage) {
+			return;
+		}
+
+		const matcher = getSelectedCardMatcher(selectedCard);
+		setColumns((prevColumns) => {
+			let movedCard = null;
+
+			const withoutCard = prevColumns.map((column) => {
+				const remainingCards = [];
+				for (const card of column.cards) {
+					if (matcher(card) && !movedCard) {
+						movedCard = { ...card, days: '0d' };
+						continue;
+					}
+					remainingCards.push(card);
+				}
+
+				return {
+					...column,
+					cards: remainingCards,
+				};
+			});
+
+			if (!movedCard) {
+				return prevColumns;
+			}
+
+			return withoutCard.map((column) => {
+				if (column.title !== detailMoveStage) {
+					return column;
+				}
+
+				return {
+					...column,
+					cards: [movedCard, ...column.cards],
+				};
+			});
 		});
+
+		setSelectedCard((prev) => (prev ? { ...prev, stage: detailMoveStage, days: '0d' } : prev));
+		setDetailMoveStage('');
+	};
+
+	const handleSubStatusChange = (value) => {
+		setDetailSubStatus(value);
+		setSelectedCard((prev) => (prev ? { ...prev, subStatus: value } : prev));
+		updateSelectedCardAcrossColumns((card) => ({ ...card, subStatus: value }));
+	};
+
+	const handleSaveNote = () => {
+		setSelectedCard((prev) => (prev ? { ...prev, note: detailNotes } : prev));
+		updateSelectedCardAcrossColumns((card) => ({ ...card, note: detailNotes }));
+	};
+
+	const getFfsTone = (score) => {
+		if (typeof score !== 'number') {
+			return { label: 'Not scored', color: COLORS.textMuted, width: 0 };
+		}
+		if (score >= 75) {
+			return { label: 'Optimized', color: COLORS.green, width: score };
+		}
+		if (score >= 55) {
+			return { label: 'Building', color: COLORS.gold, width: score };
+		}
+		return { label: 'At Risk', color: COLORS.red, width: score };
 	};
 
 	return (
-		<div className="flex h-full flex-col" style={{ background: COLORS.bg }}>
+		<div className="relative flex h-full flex-col" style={{ background: COLORS.bg }}>
 			<div
 				className="flex flex-col gap-3 border-b px-4 py-3 sm:px-5 lg:flex-row lg:flex-wrap lg:items-center lg:gap-2 lg:py-2.5"
 				style={{ background: COLORS.card, borderBottomColor: COLORS.border }}
@@ -598,10 +776,46 @@ export default function PipelineBoardScreen({ onOpenClientWorkspace }) {
 					/>
 				</div>
 
+					<select
+						value={advisorFilter}
+						onChange={(event) => setAdvisorFilter(event.target.value)}
+						className="rounded-lg border px-2.5 py-1.5 text-[12.5px]"
+						style={{ background: COLORS.card, borderColor: COLORS.border, color: COLORS.text }}
+					>
+						<option value="">All Advisors</option>
+						<option>Yvonne Hollis-Cobb</option>
+						<option>David Reyes</option>
+						<option>Priya Shankar</option>
+					</select>
+
+					<select
+						value={locationFilter}
+						onChange={(event) => setLocationFilter(event.target.value)}
+						className="rounded-lg border px-2.5 py-1.5 text-[12.5px]"
+						style={{ background: COLORS.card, borderColor: COLORS.border, color: COLORS.text }}
+					>
+						<option value="">All Locations</option>
+						<option>Katy</option>
+						<option>Downtown Houston</option>
+						<option>Pearland</option>
+					</select>
+
+					<select
+						value={tierFilter}
+						onChange={(event) => setTierFilter(event.target.value)}
+						className="rounded-lg border px-2.5 py-1.5 text-[12.5px]"
+						style={{ background: COLORS.card, borderColor: COLORS.border, color: COLORS.text }}
+					>
+						<option value="">All Tiers</option>
+						<option value="T1">T1</option>
+						<option value="T2">T2</option>
+						<option value="T3">T3</option>
+					</select>
+
 					<div className="hidden h-4.5 w-px lg:block" style={{ background: COLORS.border }}></div>
 
 					<div className="flex flex-wrap gap-2">
-						{FILTERS.map((filter) => {
+						{QUICK_FILTERS.map((filter) => {
 							const isActive = activeFilter === filter;
 
 							return (
@@ -625,9 +839,9 @@ export default function PipelineBoardScreen({ onOpenClientWorkspace }) {
 
 				<div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between lg:ml-auto lg:w-auto lg:flex-row lg:items-center lg:gap-3">
 					<span className="text-xs leading-5" style={{ color: COLORS.textMuted }}>
-						<strong style={{ color: COLORS.text }}>8</strong> need action &nbsp;·&nbsp;{' '}
-						<strong style={{ color: COLORS.text }}>3</strong> renewals due &nbsp;·&nbsp;{' '}
-						<strong style={{ color: COLORS.text }}>{totalCount}</strong> total
+						<strong style={{ color: COLORS.text }}>{needsActionCount}</strong> need action &nbsp;·&nbsp;{' '}
+						<strong style={{ color: COLORS.text }}>{renewalCount}</strong> renewals due &nbsp;·&nbsp;{' '}
+						<strong style={{ color: COLORS.text }}>{filteredCount}</strong> showing / {totalCount} total
 					</span>
 					<button
 						onClick={handleOpenAddLead}
@@ -640,12 +854,24 @@ export default function PipelineBoardScreen({ onOpenClientWorkspace }) {
 				</div>
 			</div>
 
+			<div
+				className="flex flex-wrap items-center gap-3 border-b px-4 py-2 sm:px-5"
+				style={{ background: COLORS.card, borderBottomColor: COLORS.border }}
+			>
+				<div className="flex items-center gap-2 text-[11px]" style={{ color: COLORS.textSec }}>
+					<div className="h-3.5 w-3.5 rounded bg-[#E8F3F1]" style={{ border: `2px solid ${COLORS.teal}` }}></div>
+					<strong style={{ color: COLORS.tealDeep }}>Your stages (1-3)</strong> - Add leads, move cards, monitor intake
+				</div>
+				<div className="flex items-center gap-2 text-[11px]" style={{ color: COLORS.textSec }}>
+					<div className="h-3.5 w-3.5 rounded border border-dashed" style={{ borderColor: COLORS.border }}></div>
+					<span>Advisor stages (4-8) - Read-only visibility</span>
+				</div>
+			</div>
+
 			<div className="flex-1 overflow-y-auto px-4 pb-5 pt-4 sm:px-5">
 				<div className="flex flex-col items-stretch gap-4 lg:flex-row lg:items-start lg:gap-3 lg:overflow-x-auto lg:overflow-y-hidden">
-				{columns.map((column) => {
-					const filteredCards = column.cards.filter(
-						(card) => matchesFilter(card, activeFilter) && matchesSearch(card, searchValue),
-					);
+				{filteredColumns.map((column) => {
+					const filteredCards = column.cards;
 
 					return (
 						<div key={column.id} className="flex w-full flex-col lg:max-h-full lg:w-60 lg:shrink-0">
@@ -658,7 +884,7 @@ export default function PipelineBoardScreen({ onOpenClientWorkspace }) {
 										className="rounded-full px-2 py-0.5 text-[10px] font-extrabold text-white"
 										style={{ background: column.badgeBackground }}
 									>
-										{column.displayCount}
+										{filteredCards.length}
 									</span>
 								</div>
 								{column.subtitle && (
@@ -677,7 +903,7 @@ export default function PipelineBoardScreen({ onOpenClientWorkspace }) {
 									/>
 								))}
 
-								{column.id === 'active-subscribers' && activeFilter === 'All' && !searchValue.trim() && column.summaryCard && (
+								{column.id === 'active-subscribers' && activeFilter === 'All' && !searchValue.trim() && !advisorFilter && !locationFilter && !tierFilter && column.summaryCard && (
 									<div
 										className="rounded-xl border bg-white p-3"
 										style={{ borderColor: COLORS.border, boxShadow: cardShadow, opacity: 0.7 }}
@@ -713,6 +939,274 @@ export default function PipelineBoardScreen({ onOpenClientWorkspace }) {
 						</div>
 					);
 				})}
+				</div>
+			</div>
+
+			<div
+				className={`fixed inset-0 z-180 transition ${selectedCard ? 'pointer-events-auto bg-black/30' : 'pointer-events-none bg-black/0'}`}
+				onClick={closeDetailPanel}
+			>
+				<div
+					className={`absolute right-0 top-0 h-full w-full max-w-110 transform border-l bg-white transition-transform duration-300 ${selectedCard ? 'translate-x-0' : 'translate-x-full'}`}
+					style={{ borderLeftColor: COLORS.border }}
+					onClick={(event) => event.stopPropagation()}
+				>
+					{selectedCard && (
+						<div className="flex h-full flex-col" style={{ boxShadow: '-8px 0 32px rgba(31,41,55,.15)' }}>
+							<div
+								className="flex shrink-0 items-center justify-between border-b px-5 py-4"
+								style={{ background: COLORS.navy, borderBottomColor: COLORS.border }}
+							>
+								<div className="w-full">
+									<div className="mb-1.25 flex items-center gap-2.5">
+										<div
+											className="flex h-8.5 w-8.5 items-center justify-center rounded-[10px] text-xs font-extrabold text-white"
+											style={{ background: COLORS.teal }}
+										>
+											{selectedCard.initials}
+										</div>
+										<div>
+											<div className="text-[15px] font-bold text-white" style={{ letterSpacing: '-0.02em' }}>
+												{selectedCard.name}
+											</div>
+											<div className="text-[11px]" style={{ color: 'rgba(255,255,255,.45)' }}>
+												{selectedCard.advisor} · {selectedCard.location}
+											</div>
+										</div>
+									</div>
+									<div className="flex flex-wrap gap-1.5">
+										<span
+											className="rounded-full px-2 py-0.5 text-[10px] font-bold"
+											style={{ background: 'rgba(47,125,121,.3)', color: '#5ECFCA' }}
+										>
+											{selectedCard.tier}
+										</span>
+										<span
+											className="rounded-full px-2 py-0.5 text-[10px]"
+											style={{ background: 'rgba(255,255,255,.1)', color: 'rgba(255,255,255,.6)' }}
+										>
+											{selectedCard.stage}
+										</span>
+									</div>
+								</div>
+								<button
+									className="ml-3 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-none text-lg"
+									style={{ background: 'rgba(255,255,255,.1)', color: 'rgba(255,255,255,.7)' }}
+									onClick={closeDetailPanel}
+								>
+									×
+								</button>
+							</div>
+
+							<div className="flex-1 overflow-y-auto p-5">
+								<div className="mb-4.5">
+									<div className="mb-2.5 text-[10px] font-extrabold uppercase" style={{ color: COLORS.textMuted, letterSpacing: '0.1em' }}>
+										Pipeline Stage
+									</div>
+									<div className="mb-3 flex items-center overflow-x-auto pb-1.5">
+										{DETAIL_STAGES.map((stage, index) => {
+											const currentIndex = DETAIL_STAGES.indexOf(selectedCard.stage);
+											const done = index < currentIndex;
+											const active = index === currentIndex;
+											const bg = done ? COLORS.green : active ? COLORS.teal : COLORS.border;
+											const color = done || active ? '#fff' : COLORS.textMuted;
+
+											return (
+												<React.Fragment key={stage}>
+													<div
+														className="shrink-0 rounded-[7px] border-[1.5px] px-2 py-0.75 text-[10px] font-bold whitespace-nowrap"
+														style={{ background: bg, borderColor: bg, color }}
+													>
+														{stage}
+													</div>
+													{index < DETAIL_STAGES.length - 1 && (
+														<div
+															className="h-0.5 w-2.5 shrink-0"
+															style={{ background: done ? COLORS.green : COLORS.border }}
+														></div>
+													)}
+												</React.Fragment>
+											);
+										})}
+									</div>
+
+									<div className="mt-3 flex items-center justify-between gap-3">
+										<div>
+											<div className="text-[13px] font-bold" style={{ color: COLORS.text }}>
+												Current: <span style={{ color: COLORS.teal }}>{selectedCard.stage}</span>
+											</div>
+											<div className="mt-0.5 text-xs" style={{ color: COLORS.textMuted }}>
+												{selectedCard.days} in this stage
+											</div>
+											<div className="mt-2.5">
+												<select
+													value={detailSubStatus}
+													onChange={(event) => handleSubStatusChange(event.target.value)}
+													className="rounded-lg border px-2.5 py-1.75 text-[12.5px]"
+													style={{ borderColor: COLORS.border, background: COLORS.bg, color: COLORS.text }}
+												>
+													{(SUB_STATUS_OPTIONS[selectedCard.stage] || ['Unworked']).map((item) => (
+														<option key={item} value={item}>
+															{item}
+														</option>
+													))}
+												</select>
+											</div>
+										</div>
+
+										{selectedCard.isOwnedStage && (
+											<div className="flex gap-1.75">
+												<select
+													value={detailMoveStage}
+													onChange={(event) => setDetailMoveStage(event.target.value)}
+													className="rounded-[9px] border px-2.5 py-1.5 text-xs"
+													style={{ borderColor: COLORS.border, background: COLORS.card, color: COLORS.text }}
+												>
+													<option value="">Move to stage...</option>
+													{DETAIL_STAGES.map((stage) => (
+														<option key={stage} value={stage}>
+															{stage}
+														</option>
+													))}
+												</select>
+												<button
+													onClick={handleMoveStage}
+													className="rounded-[9px] border-none px-3 py-1.5 text-xs font-bold text-white"
+													style={{ background: COLORS.teal }}
+												>
+													Move →
+												</button>
+											</div>
+										)}
+									</div>
+								</div>
+
+								<div
+									className="mb-4 rounded-[10px] px-3.5 py-2.5 text-[13px] leading-normal"
+									style={{
+										background:
+											selectedCard.actionTone === 'urgent'
+												? COLORS.redTint
+												: selectedCard.actionTone === 'warn'
+													? '#FEF9EE'
+													: COLORS.tealTint,
+										color:
+											selectedCard.actionTone === 'urgent'
+												? COLORS.red
+												: selectedCard.actionTone === 'warn'
+													? '#7a5a00'
+													: COLORS.tealDeep,
+									}}
+								>
+									{selectedCard.action}
+								</div>
+
+								<div className="mb-4.5">
+									<div className="mb-2.5 text-[10px] font-extrabold uppercase" style={{ color: COLORS.textMuted, letterSpacing: '0.1em' }}>
+										Financial Freedom Score™
+									</div>
+									{(() => {
+										const ffs = getFfsTone(selectedCard.score);
+										return (
+											<div className="flex items-center gap-3">
+												<div className="text-[40px] font-extrabold leading-none" style={{ color: ffs.color, letterSpacing: '-0.04em' }}>
+													{typeof selectedCard.score === 'number' ? selectedCard.score : '—'}
+												</div>
+												<div className="flex-1">
+													<div
+														className="mb-1.5 text-[11px] font-extrabold uppercase"
+														style={{ color: ffs.color, letterSpacing: '0.08em' }}
+													>
+														{ffs.label}
+													</div>
+													<div className="h-1.5 overflow-hidden rounded-full" style={{ background: COLORS.border }}>
+														<div className="h-full rounded-full transition-all" style={{ width: `${ffs.width}%`, background: ffs.color }}></div>
+													</div>
+												</div>
+											</div>
+										);
+									})()}
+								</div>
+
+								<div className="mb-4.5">
+									<div className="mb-2.5 text-[10px] font-extrabold uppercase" style={{ color: COLORS.textMuted, letterSpacing: '0.1em' }}>
+										Client Details
+									</div>
+									<div className="grid grid-cols-2 gap-0">
+										{[
+											['Income', selectedCard.meta || '—'],
+											['Lead Source', selectedCard.meta || '—'],
+											['Location', selectedCard.location],
+											['Advisor', selectedCard.advisor],
+											['Days In Stage', selectedCard.days],
+											['FFS Score', typeof selectedCard.score === 'number' ? `${selectedCard.score} / 100` : 'Not scored'],
+										].map(([label, value]) => (
+											<div key={label} className="border-b py-2" style={{ borderBottomColor: '#F0ECE5' }}>
+												<div className="mb-0.5 text-[10px] font-extrabold uppercase" style={{ color: COLORS.textMuted, letterSpacing: '0.06em' }}>
+													{label}
+												</div>
+												<div className="pr-2 text-[13px] font-semibold" style={{ color: COLORS.text }}>
+													{value}
+												</div>
+											</div>
+										))}
+									</div>
+								</div>
+
+								<div className="mb-4.5">
+									<div className="mb-2.5 text-[10px] font-extrabold uppercase" style={{ color: COLORS.textMuted, letterSpacing: '0.1em' }}>
+										RM Actions
+									</div>
+									<div className="flex flex-col gap-2">
+										{selectedCard.isOwnedStage ? (
+											<>
+												<button
+													onClick={() => {
+														closeDetailPanel();
+														onScreenChange?.('email');
+													}}
+													className="rounded-[9px] border px-4 py-2 text-left text-[13px] font-bold"
+													style={{ borderColor: COLORS.border, color: COLORS.textSec, background: COLORS.card }}
+												>
+													Send Follow-up Email
+												</button>
+											</>
+										) : (
+											<button
+												onClick={() => {
+													setDetailNotes((prev) => (prev ? `${prev}\nFlagged for advisor review.` : 'Flagged for advisor review.'));
+												}}
+												className="rounded-[9px] border px-4 py-2 text-left text-[13px] font-bold"
+												style={{ borderColor: COLORS.border, color: COLORS.textSec, background: COLORS.card }}
+											>
+												Flag For Advisor
+											</button>
+										)}
+									</div>
+								</div>
+
+								<div className="mb-2">
+									<div className="mb-2.5 text-[10px] font-extrabold uppercase" style={{ color: COLORS.textMuted, letterSpacing: '0.1em' }}>
+										Notes
+									</div>
+									<textarea
+										value={detailNotes}
+										onChange={(event) => setDetailNotes(event.target.value)}
+										placeholder="Add notes about this client..."
+										className="min-h-20 w-full resize-y rounded-[10px] border px-3 py-2.5 text-[13px] leading-[1.6] outline-none"
+										style={{ borderColor: COLORS.border, color: COLORS.text, background: COLORS.bg }}
+									></textarea>
+									<button
+										onClick={handleSaveNote}
+										className="mt-2 rounded-lg border-none px-3.5 py-1.5 text-xs font-bold text-white"
+										style={{ background: COLORS.teal }}
+									>
+										Save Note
+									</button>
+								</div>
+							</div>
+						</div>
+					)}
 				</div>
 			</div>
 

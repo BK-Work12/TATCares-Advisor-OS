@@ -304,13 +304,13 @@ export default function TATCaresDashboard() {
         />
 
         <div className="flex-1 overflow-y-auto" style={{ background: COLORS.bg }}>
-          {activeScreen === 'dashboard' && <DashboardScreen />}
-          {activeScreen === 'pipeline' && <PipelineBoardScreen onOpenClientWorkspace={handleOpenClientWorkspace} />}
+          {activeScreen === 'dashboard' && <DashboardScreen onScreenChange={handleScreenChange} />}
+          {activeScreen === 'pipeline' && <PipelineBoardScreen onScreenChange={handleScreenChange} />}
           {activeScreen === 'clients' && <ClientListScreen onOpenClientWorkspace={handleOpenClientWorkspace} />}
-          {activeScreen === 'notifications' && <NotificationsScreen />}
+          {activeScreen === 'notifications' && <NotificationsScreen onScreenChange={handleScreenChange} />}
           {activeScreen === 'email' && <EmailScreen />}
           {activeScreen === 'meetings' && <MeetingsScreen />}
-          {activeScreen === 'billing' && <BillingScreen />}
+            {activeScreen === 'billing' && <BillingScreen onScreenChange={handleScreenChange} />}
           {activeScreen === 'reports' && <ReportsScreen />}
           {activeScreen === 'strategy' && <StrategyLibraryView />}
           {activeScreen === 'client' && (

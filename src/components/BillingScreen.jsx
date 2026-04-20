@@ -1,318 +1,391 @@
-import React from 'react';
-import { COLORS } from './tatcaresShared';
+import React, { useEffect, useMemo, useState } from 'react';
+import { COLORS, cardShadow } from './tatcaresShared';
 
-export default function BillingScreen() {
-	const kpis = [
-		{
-			label: 'Q2 revenue (projected)',
-			value: '$41,160',
-			delta: '↑ 18% vs Q1',
-			deltaColor: COLORS.green,
-			iconBg: '#E8F5EE',
-			icon: (
-				<svg viewBox="0 0 24 24" style={{ stroke: COLORS.green }} className="w-4 h-4 fill-none stroke-2 stroke-linecap-round stroke-linejoin-round">
-					<line x1="12" y1="1" x2="12" y2="23" />
-					<path d="M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6" />
-				</svg>
-			),
-		},
-		{
-			label: 'Active subscriptions',
-			value: '24',
-			delta: '↑ 3 new this quarter',
-			deltaColor: COLORS.green,
-			iconBg: COLORS.tealTint,
-			icon: (
-				<svg viewBox="0 0 24 24" style={{ stroke: COLORS.teal }} className="w-4 h-4 fill-none stroke-2 stroke-linecap-round stroke-linejoin-round">
-					<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-					<circle cx="9" cy="7" r="4" />
-					<path d="M23 21v-2a4 4 0 00-3-3.87" />
-					<path d="M16 3.13a4 4 0 010 7.75" />
-				</svg>
-			),
-		},
-		{
-			label: 'Outstanding balance',
-			value: '$349',
-			valueColor: COLORS.red,
-			delta: '1 overdue · Derek Wilson',
-			deltaColor: COLORS.red,
-			iconBg: COLORS.redTint,
-			icon: (
-				<svg viewBox="0 0 24 24" style={{ stroke: COLORS.red }} className="w-4 h-4 fill-none stroke-2 stroke-linecap-round stroke-linejoin-round">
-					<circle cx="12" cy="12" r="10" />
-					<line x1="12" y1="8" x2="12" y2="12" />
-					<line x1="12" y1="16" x2="12.01" y2="16" />
-				</svg>
-			),
-		},
-		{
-			label: 'Renewal rate',
-			value: '91%',
-			delta: '21 of 23 renewed this year',
-			deltaColor: COLORS.green,
-			iconBg: '#FEF9EE',
-			icon: (
-				<svg viewBox="0 0 24 24" style={{ stroke: COLORS.gold }} className="w-4 h-4 fill-none stroke-2 stroke-linecap-round stroke-linejoin-round">
-					<polyline points="23 4 23 10 17 10" />
-					<path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" />
-				</svg>
-			),
-		},
-	];
+const ADVISOR_COLORS = {
+	'Yvonne Hollis-Cobb': COLORS.teal,
+	'David Reyes': '#5B4A8B',
+	'Priya Shankar': '#B8860B',
+};
 
-	const subscriptions = [
-		{ initials: 'DW', avatar: COLORS.red, client: 'Derek Wilson', tierMeta: 'T2 · Planner', tier: 'T2', tierBg: '#F3EFFA', tierColor: '#5B4A8B', amount: '$349', status: 'Overdue 14d', statusBg: COLORS.redTint, statusColor: COLORS.red, renewal: 'Was Apr 1', renewalColor: COLORS.red, action: 'Send reminder', actionColor: COLORS.red, actionBorder: COLORS.red, overdue: true },
-		{ initials: 'MG', avatar: '#2C5F7F', client: 'Melissa Grant', tierMeta: 'T1 · Starter', tier: 'T1', tierBg: '#EEF3FC', tierColor: '#2C5F7F', amount: '$349', status: 'Due in 5 days', statusBg: '#FEF9EE', statusColor: COLORS.gold, renewal: 'Apr 20', renewalColor: COLORS.gold, action: 'Send reminder' },
-		{ initials: 'HE', avatar: '#1A7A4A', client: 'Henry Ellis', tierMeta: 'T3 · Advisor', tier: 'T3', tierBg: '#E8F5EE', tierColor: COLORS.green, amount: '$349', status: 'Due in 8 days', statusBg: '#FEF9EE', statusColor: COLORS.gold, renewal: 'Apr 23', renewalColor: COLORS.gold, action: 'View' },
-		{ initials: 'JC', avatar: '#1A7A4A', client: 'Jordan Crawford', tierMeta: 'T3 · Advisor', tier: 'T3', tierBg: '#E8F5EE', tierColor: COLORS.green, amount: '$349', status: 'Active', statusBg: '#E8F5EE', statusColor: COLORS.green, renewal: 'Jul 1', renewalColor: COLORS.text, action: 'View' },
-		{ initials: 'CW', avatar: COLORS.teal, client: 'Carol Williams', tierMeta: 'T3 · Advisor', tier: 'T3', tierBg: '#E8F5EE', tierColor: COLORS.green, amount: '$349', status: 'Active', statusBg: '#E8F5EE', statusColor: COLORS.green, renewal: 'May 1', renewalColor: COLORS.text, action: 'View' },
-		{ initials: 'TN', avatar: COLORS.teal, client: 'Tom Nguyen', tierMeta: 'T2 · Planner', tier: 'T2', tierBg: '#F3EFFA', tierColor: '#5B4A8B', amount: '$349', status: 'Active', statusBg: '#E8F5EE', statusColor: COLORS.green, renewal: 'Jun 1', renewalColor: COLORS.text, action: 'View' },
-		{ initials: 'RC', avatar: '#5B4A8B', client: 'Robert Chen', tierMeta: 'T1 · Starter', tier: 'T1', tierBg: '#EEF3FC', tierColor: '#2C5F7F', amount: '$349', status: 'Active', statusBg: '#E8F5EE', statusColor: COLORS.green, renewal: 'May 15', renewalColor: COLORS.text, action: 'View' },
-	];
+const TIER_META = {
+	T1: { label: 'Starter', mrr: 349, bg: '#EEF3FC', color: '#2C5F7F' },
+	T2: { label: 'Planner', mrr: 349, bg: '#F3EFFA', color: '#5B4A8B' },
+	T3: { label: 'Advisor', mrr: 499, bg: '#E8F5EE', color: COLORS.green },
+};
 
-	const revenueHistory = [
-		{ quarter: 'Q4 2025', width: '67%', amount: '$27,920', amountColor: COLORS.textSec },
-		{ quarter: 'Q1 2026', width: '83%', amount: '$34,900', amountColor: COLORS.textSec },
-		{ quarter: 'Q2 2026 (current)', width: '100%', amount: '$41,160', amountColor: COLORS.teal, barColor: COLORS.teal, active: true },
-	];
+const INITIAL_BILLING = [
+	{ id: 1, name: 'Jordan Crawford', advisor: 'Yvonne Hollis-Cobb', location: 'Katy', tier: 'T3', ffs: 68, status: 'active', mrr: 499, renewal: 'Jun 1, 2026', lastPaid: 'Mar 1, 2026', daysOverdue: 0, quarters: 4, notes: 'Top client. Referred 2 leads.' },
+	{ id: 2, name: 'Henry Ellis', advisor: 'Yvonne Hollis-Cobb', location: 'Katy', tier: 'T3', ffs: 91, status: 'active', mrr: 499, renewal: 'Jun 15, 2026', lastPaid: 'Mar 15, 2026', daysOverdue: 0, quarters: 5, notes: 'FFS 91. Very engaged.' },
+	{ id: 3, name: 'Carol Williams', advisor: 'Yvonne Hollis-Cobb', location: 'Katy', tier: 'T3', ffs: 84, status: 'active', mrr: 499, renewal: 'May 1, 2026', lastPaid: 'Feb 1, 2026', daysOverdue: 0, quarters: 3, notes: '' },
+	{ id: 4, name: 'Robert Chen', advisor: 'Yvonne Hollis-Cobb', location: 'Katy', tier: 'T1', ffs: 79, status: 'active', mrr: 349, renewal: 'May 10, 2026', lastPaid: 'Feb 10, 2026', daysOverdue: 0, quarters: 2, notes: '' },
+	{ id: 5, name: 'Nina Foster', advisor: 'Yvonne Hollis-Cobb', location: 'Katy', tier: 'T2', ffs: 55, status: 'active', mrr: 349, renewal: 'May 20, 2026', lastPaid: 'Feb 20, 2026', daysOverdue: 0, quarters: 2, notes: '' },
+	{ id: 6, name: 'Derek Wilson', advisor: 'Yvonne Hollis-Cobb', location: 'Katy', tier: 'T2', ffs: 58, status: 'overdue', mrr: 349, renewal: 'Mar 1, 2026', lastPaid: 'Dec 1, 2025', daysOverdue: 45, quarters: 3, notes: '3rd reminder sent. Last contact Apr 1.' },
+	{ id: 7, name: 'Melissa Grant', advisor: 'Priya Shankar', location: 'Katy', tier: 'T1', ffs: 72, status: 'renewal', mrr: 349, renewal: 'Apr 20, 2026', lastPaid: 'Jan 20, 2026', daysOverdue: 0, quarters: 2, notes: 'Renewal Apr 20. Strong FFS progress.' },
+	{ id: 8, name: 'Diane Moore', advisor: 'David Reyes', location: 'Downtown Houston', tier: 'T2', ffs: 49, status: 'renewal', mrr: 349, renewal: 'May 15, 2026', lastPaid: 'Feb 15, 2026', daysOverdue: 0, quarters: 3, notes: 'FFS dropped. Advisor flagged.' },
+	{ id: 9, name: 'James Park', advisor: 'Priya Shankar', location: 'Downtown Houston', tier: 'T2', ffs: 61, status: 'active', mrr: 349, renewal: 'Jun 5, 2026', lastPaid: 'Mar 5, 2026', daysOverdue: 0, quarters: 2, notes: '' },
+	{ id: 10, name: 'Angela Reeves', advisor: 'Priya Shankar', location: 'Downtown Houston', tier: 'T3', ffs: 45, status: 'active', mrr: 499, renewal: 'Jun 10, 2026', lastPaid: 'Mar 10, 2026', daysOverdue: 0, quarters: 2, notes: '' },
+	{ id: 11, name: 'Carla Reyes', advisor: 'Priya Shankar', location: 'Pearland', tier: 'T2', ffs: 63, status: 'active', mrr: 349, renewal: 'May 30, 2026', lastPaid: 'Feb 28, 2026', daysOverdue: 0, quarters: 1, notes: 'New subscriber - Q1 first quarter.' },
+	{ id: 12, name: 'David Okonkwo', advisor: 'Yvonne Hollis-Cobb', location: 'Katy', tier: 'T3', ffs: 38, status: 'active', mrr: 499, renewal: 'Jun 20, 2026', lastPaid: 'Mar 20, 2026', daysOverdue: 0, quarters: 1, notes: '' },
+	{ id: 13, name: 'Priya Sharma', advisor: 'Priya Shankar', location: 'Katy', tier: 'T2', ffs: 54, status: 'active', mrr: 349, renewal: 'Jun 18, 2026', lastPaid: 'Mar 18, 2026', daysOverdue: 0, quarters: 1, notes: 'Recently onboarded.' },
+	{ id: 14, name: 'Thomas Wren', advisor: 'David Reyes', location: 'Downtown Houston', tier: 'T2', ffs: 77, status: 'paused', mrr: 349, renewal: 'N/A', lastPaid: 'Jan 5, 2026', daysOverdue: 0, quarters: 4, notes: 'Paused Apr 2026. Will revisit Q3.' },
+	{ id: 15, name: 'Kevin Marsh', advisor: 'David Reyes', location: 'Downtown Houston', tier: 'T1', ffs: 77, status: 'active', mrr: 349, renewal: 'Jun 25, 2026', lastPaid: 'Mar 25, 2026', daysOverdue: 0, quarters: 1, notes: 'Recently activated post-consultation.' },
+	{ id: 16, name: 'Jordan Crawford (Pearland)', advisor: 'Priya Shankar', location: 'Pearland', tier: 'T3', ffs: 68, status: 'renewal', mrr: 499, renewal: 'Apr 15, 2026', lastPaid: 'Jan 15, 2026', daysOverdue: 0, quarters: 3, notes: 'Renewal due now.' },
+	{ id: 17, name: 'Diane Moore (Legacy)', advisor: 'David Reyes', location: 'Downtown Houston', tier: 'T1', ffs: 41, status: 'overdue', mrr: 349, renewal: 'Mar 20, 2026', lastPaid: 'Dec 20, 2025', daysOverdue: 26, quarters: 2, notes: 'Second overdue notice sent.' },
+	{ id: 18, name: 'Carla Nguyen', advisor: 'Yvonne Hollis-Cobb', location: 'Katy', tier: 'T2', ffs: 0, status: 'churned', mrr: 0, renewal: 'N/A', lastPaid: 'Dec 10, 2025', daysOverdue: 0, quarters: 2, notes: 'Churned Jan 2026. Non-responsive.' },
+];
 
-	const renewals = [
-		{ client: 'Derek Wilson', date: 'Overdue — Apr 1', amount: '$349', color: COLORS.red, tag: 'Overdue', tagBg: COLORS.redTint, tagColor: COLORS.red },
-		{ client: 'Melissa Grant', date: 'Apr 20 · 5 days', amount: '$349', color: COLORS.textMuted, tag: 'Due soon', tagBg: '#FEF9EE', tagColor: '#7a5a00' },
-		{ client: 'Henry Ellis', date: 'Apr 23 · 8 days', amount: '$349', color: COLORS.textMuted, tag: 'Due soon', tagBg: '#FEF9EE', tagColor: '#7a5a00' },
-		{ client: 'Carol Williams', date: 'May 1', amount: '$349', color: COLORS.textMuted, tag: 'On track', tagBg: COLORS.tealTint, tagColor: COLORS.tealDeep },
-		{ client: 'Robert Chen', date: 'May 15', amount: '$349', color: COLORS.textMuted, tag: 'On track', tagBg: COLORS.tealTint, tagColor: COLORS.tealDeep },
-	];
+function parseRenewalDate(value) {
+	if (!value || value === 'N/A') return new Date('2099-01-01');
+	const parsed = new Date(value);
+	return Number.isNaN(parsed.getTime()) ? new Date('2099-01-01') : parsed;
+}
 
-	const tierRevenue = [
-		{ label: 'T1 Starter', dot: '#2C5F7F', meta: '$349/qtr · 8 clients', count: '8', countColor: '#2C5F7F', total: '$2,792/qtr' },
-		{ label: 'T2 Planner', dot: '#5B4A8B', meta: '$349/qtr · 10 clients', count: '10', countColor: '#5B4A8B', total: '$3,490/qtr' },
-		{ label: 'T3 Advisor', dot: COLORS.green, meta: '$349/qtr · 6 clients', count: '6', countColor: COLORS.green, total: '$2,094/qtr' },
-	];
+function statusMeta(status, daysOverdue) {
+	if (status === 'active') return { label: 'Active', bg: '#E8F5EE', color: COLORS.green };
+	if (status === 'overdue') return { label: `Overdue ${daysOverdue}d`, bg: COLORS.redTint, color: COLORS.red };
+	if (status === 'renewal') return { label: 'Renewal Due', bg: '#FEF9EE', color: '#7A5A00' };
+	if (status === 'paused') return { label: 'Paused', bg: COLORS.bg, color: COLORS.textMuted, border: COLORS.border };
+	if (status === 'payment_failed') return { label: 'Payment Failed', bg: COLORS.redTint, color: COLORS.red };
+	if (status === 'pending') return { label: 'Pending Payment', bg: '#FEF9EE', color: '#7A5A00' };
+	return { label: 'Churned', bg: '#F1F0EF', color: COLORS.textMuted };
+}
+
+function formatMoney(amount) {
+	return `$${amount.toLocaleString()}`;
+}
+
+export default function BillingScreen({ onScreenChange }) {
+	const [billingRows, setBillingRows] = useState(INITIAL_BILLING);
+	const [search, setSearch] = useState('');
+	const [filterAdvisor, setFilterAdvisor] = useState('');
+	const [filterLocation, setFilterLocation] = useState('');
+	const [filterStatus, setFilterStatus] = useState('');
+	const [filterTier, setFilterTier] = useState('');
+	const [sort, setSort] = useState('name');
+	const [viewAll, setViewAll] = useState(false);
+	const [activeBillingId, setActiveBillingId] = useState(null);
+	const [noteDraft, setNoteDraft] = useState('');
+
+	const advisorOptions = useMemo(() => Array.from(new Set(billingRows.map((b) => b.advisor))).sort((a, b) => a.localeCompare(b)), [billingRows]);
+	const locationOptions = useMemo(() => Array.from(new Set(billingRows.map((b) => b.location))).sort((a, b) => a.localeCompare(b)), [billingRows]);
+
+	const filteredRows = useMemo(() => {
+		const query = search.trim().toLowerCase();
+		const filtered = billingRows.filter((row) => {
+			if (query && !row.name.toLowerCase().includes(query)) return false;
+			if (filterAdvisor && row.advisor !== filterAdvisor) return false;
+			if (filterLocation && row.location !== filterLocation) return false;
+			if (filterStatus && row.status !== filterStatus) return false;
+			if (filterTier && row.tier !== filterTier) return false;
+			return true;
+		});
+
+		return [...filtered].sort((a, b) => {
+			if (sort === 'name') return a.name.localeCompare(b.name);
+			if (sort === 'renewal') return parseRenewalDate(a.renewal) - parseRenewalDate(b.renewal);
+			if (sort === 'overdue') return b.daysOverdue - a.daysOverdue;
+			if (sort === 'mrr-desc') return b.mrr - a.mrr;
+			if (sort === 'ffs-desc') return b.ffs - a.ffs;
+			return 0;
+		});
+	}, [billingRows, search, filterAdvisor, filterLocation, filterStatus, filterTier, sort]);
+
+	const stats = useMemo(() => {
+		const active = filteredRows.filter((r) => r.status === 'active').length;
+		const overdueRows = filteredRows.filter((r) => r.status === 'overdue');
+		const renewal = filteredRows.filter((r) => r.status === 'renewal').length;
+		const churned = filteredRows.filter((r) => r.status === 'churned' || r.status === 'paused').length;
+		const mrr = filteredRows.reduce((sum, row) => sum + row.mrr, 0);
+		const overdueAmount = overdueRows.reduce((sum, row) => sum + row.mrr, 0);
+		const activePct = filteredRows.length > 0 ? Math.round((active / filteredRows.length) * 100) : 0;
+		return {
+			mrr,
+			active,
+			overdueCount: overdueRows.length,
+			overdueAmount,
+			renewal,
+			churned,
+			activePct,
+		};
+	}, [filteredRows]);
+
+	const activeBilling = useMemo(() => {
+		if (!activeBillingId) return null;
+		return billingRows.find((row) => row.id === activeBillingId) || null;
+	}, [activeBillingId, billingRows]);
+
+	useEffect(() => {
+		setNoteDraft(activeBilling?.notes || '');
+	}, [activeBilling]);
+
+	const saveNote = () => {
+		if (!activeBilling) return;
+		setBillingRows((prev) => prev.map((row) => (row.id === activeBilling.id ? { ...row, notes: noteDraft } : row)));
+	};
+
+	const openEmailTab = () => {
+		if (onScreenChange) onScreenChange('email');
+	};
 
 	return (
-		<div style={{ backgroundColor: COLORS.bg }} className="min-h-screen overflow-y-auto p-4 sm:p-5 lg:p-7">
-			<div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-				{kpis.map((kpi) => (
-					<div
-						key={kpi.label}
-						style={{
-							backgroundColor: COLORS.card,
-							borderColor: COLORS.border,
-							boxShadow: '0 1px 3px rgba(31,41,55,0.04), 0 4px 16px rgba(31,41,55,0.04)',
-						}}
-						className="border rounded-[14px] p-4 flex items-start justify-between gap-3"
-					>
-						<div>
-							<div className="text-[11px] font-bold uppercase tracking-[0.08em] mb-1.5" style={{ color: COLORS.textMuted }}>
-								{kpi.label}
-							</div>
-							<div className="text-[26px] font-extrabold leading-none tracking-[-0.03em]" style={{ color: kpi.valueColor || COLORS.text }}>
-								{kpi.value}
-							</div>
-							<div className="text-[11px] font-semibold mt-1" style={{ color: kpi.deltaColor }}>
-								{kpi.delta}
-							</div>
+		<div className="flex min-h-full flex-col" style={{ background: COLORS.bg }}>
+			<div className="flex min-h-0 flex-1 flex-col overflow-visible lg:overflow-hidden xl:flex-row">
+				<div className="flex min-h-0 flex-1 flex-col overflow-visible xl:overflow-hidden">
+					<div className="flex flex-wrap items-center gap-2 border-b bg-white px-4 py-2.5 sm:px-5" style={{ borderColor: COLORS.border }}>
+						<div className="relative w-full sm:w-auto sm:min-w-47.5">
+							<input
+								value={search}
+								onChange={(e) => setSearch(e.target.value)}
+								placeholder="Search clients..."
+								className="w-full rounded-lg border py-1.5 pl-7 pr-2.5 text-[12.5px] outline-none"
+								style={{ borderColor: COLORS.border, background: COLORS.bg, color: COLORS.text }}
+							/>
+							<svg className="absolute left-2 top-1/2 h-3.25 w-3.25 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke={COLORS.textMuted} strokeWidth="2">
+								<circle cx="11" cy="11" r="8" />
+								<line x1="21" y1="21" x2="16.65" y2="16.65" />
+							</svg>
 						</div>
-						<div className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: kpi.iconBg }}>
-							{kpi.icon}
+
+						<select value={filterAdvisor} onChange={(e) => setFilterAdvisor(e.target.value)} className="w-full rounded-lg border px-2.5 py-1.5 text-[12.5px] sm:w-auto" style={{ borderColor: COLORS.border }}>
+							<option value="">All Advisors</option>
+							{advisorOptions.map((advisor) => (
+								<option key={advisor} value={advisor}>{advisor}</option>
+							))}
+						</select>
+
+						<select value={filterLocation} onChange={(e) => setFilterLocation(e.target.value)} className="w-full rounded-lg border px-2.5 py-1.5 text-[12.5px] sm:w-auto" style={{ borderColor: COLORS.border }}>
+							<option value="">All Locations</option>
+							{locationOptions.map((location) => (
+								<option key={location} value={location}>{location}</option>
+							))}
+						</select>
+
+						<select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="w-full rounded-lg border px-2.5 py-1.5 text-[12.5px] sm:w-auto" style={{ borderColor: COLORS.border }}>
+							<option value="">All Statuses</option>
+							<option value="active">Active</option>
+							<option value="overdue">Overdue</option>
+							<option value="renewal">Renewal Due</option>
+							<option value="paused">Paused</option>
+							<option value="churned">Churned</option>
+							<option value="payment_failed">Payment Failed</option>
+							<option value="pending">Pending Payment</option>
+						</select>
+
+						<select value={filterTier} onChange={(e) => setFilterTier(e.target.value)} className="w-full rounded-lg border px-2.5 py-1.5 text-[12.5px] sm:w-auto" style={{ borderColor: COLORS.border }}>
+							<option value="">All Tiers</option>
+							<option value="T1">T1</option>
+							<option value="T2">T2</option>
+							<option value="T3">T3</option>
+						</select>
+
+						<select value={sort} onChange={(e) => setSort(e.target.value)} className="w-full rounded-lg border px-2.5 py-1.5 text-[12.5px] sm:w-auto" style={{ borderColor: COLORS.border }}>
+							<option value="name">Sort: Name A-Z</option>
+							<option value="renewal">Sort: Renewal Date</option>
+							<option value="overdue">Sort: Days Overdue</option>
+							<option value="mrr-desc">Sort: MRR High-Low</option>
+							<option value="ffs-desc">Sort: FFS High-Low</option>
+						</select>
+
+						<div className="ml-auto flex w-full flex-wrap items-center justify-between gap-2 sm:w-auto sm:justify-end">
+							<span className="text-xs" style={{ color: COLORS.textMuted }}>
+								<strong style={{ color: COLORS.text }}>{filteredRows.length}</strong> clients · <strong style={{ color: COLORS.green }}>{formatMoney(stats.mrr)}</strong> qtrly
+							</span>
+							<label className="flex items-center gap-2 rounded-lg border px-2 py-1 text-[12px]" style={{ borderColor: COLORS.border, color: COLORS.textSec }}>
+								<input type="checkbox" checked={viewAll} onChange={(e) => setViewAll(e.target.checked)} style={{ accentColor: COLORS.teal }} />
+								View all clients (read only)
+							</label>
 						</div>
 					</div>
-				))}
-			</div>
 
-			<div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_300px]">
-				<div>
-					<div
-						style={{
-							backgroundColor: COLORS.card,
-							borderColor: COLORS.border,
-							boxShadow: '0 1px 3px rgba(31,41,55,0.04), 0 4px 16px rgba(31,41,55,0.04)',
-						}}
-						className="border rounded-[18px] overflow-hidden mb-4"
-					>
-						<div className="flex flex-col gap-2 border-b px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-5" style={{ borderColor: '#F0ECE5' }}>
-							<span className="text-[14px] font-bold tracking-[-0.01em]" style={{ color: COLORS.text }}>Active subscriptions</span>
-							<div className="flex flex-wrap items-center gap-2">
-								<span className="text-[10px] font-extrabold px-2 py-0.5 rounded-lg" style={{ background: COLORS.redTint, color: COLORS.red }}>1 overdue</span>
-								<span className="text-[10px] font-extrabold px-2 py-0.5 rounded-lg" style={{ background: '#FEF9EE', color: '#7a5a00' }}>3 renewing soon</span>
+					<div className="bg-[#F7F5F2] px-4 pb-4 pt-4 sm:px-5">
+						<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+							<div className="rounded-2xl border bg-white p-4" style={{ borderColor: COLORS.border, boxShadow: cardShadow }}>
+								<div className="text-[30px] font-extrabold leading-none tracking-[-0.04em]" style={{ color: COLORS.navy }}>{formatMoney(stats.mrr)}</div>
+								<div className="mt-1 text-xs font-semibold" style={{ color: COLORS.textMuted }}>Quarterly MRR</div>
+								<div className="mt-1 text-[11px] font-semibold" style={{ color: COLORS.green }}>Current filtered view</div>
+							</div>
+
+							<div className="rounded-2xl border bg-white p-4" style={{ borderColor: COLORS.border, boxShadow: cardShadow }}>
+								<div className="text-[30px] font-extrabold leading-none tracking-[-0.04em]" style={{ color: COLORS.teal }}>{stats.active}</div>
+								<div className="mt-1 text-xs font-semibold" style={{ color: COLORS.textMuted }}>Active Subscribers</div>
+								<div className="mt-2 h-1 overflow-hidden rounded-full" style={{ background: COLORS.border }}>
+									<div className="h-full rounded-full" style={{ width: `${stats.activePct}%`, background: COLORS.teal }}></div>
+								</div>
+							</div>
+
+							<div className="rounded-2xl border bg-white p-4" style={{ borderColor: COLORS.border, boxShadow: cardShadow }}>
+								<div className="text-[30px] font-extrabold leading-none tracking-[-0.04em]" style={{ color: COLORS.red }}>{stats.overdueCount}</div>
+								<div className="mt-1 text-xs font-semibold" style={{ color: COLORS.textMuted }}>Overdue Invoices</div>
+								<div className="mt-1 text-[11px] font-semibold" style={{ color: COLORS.red }}>{formatMoney(stats.overdueAmount)} at risk</div>
+							</div>
+
+							<div className="rounded-2xl border bg-white p-4" style={{ borderColor: COLORS.border, boxShadow: cardShadow }}>
+								<div className="text-[30px] font-extrabold leading-none tracking-[-0.04em]" style={{ color: COLORS.gold }}>{stats.renewal}</div>
+								<div className="mt-1 text-xs font-semibold" style={{ color: COLORS.textMuted }}>Renewals This Month</div>
+								<div className="mt-1 text-[11px] font-semibold" style={{ color: COLORS.gold }}>Needs outreach sequence</div>
+							</div>
+
+							<div className="rounded-2xl border bg-white p-4" style={{ borderColor: COLORS.border, boxShadow: cardShadow }}>
+								<div className="text-[30px] font-extrabold leading-none tracking-[-0.04em]" style={{ color: '#5B4A8B' }}>{stats.churned}</div>
+								<div className="mt-1 text-xs font-semibold" style={{ color: COLORS.textMuted }}>Churned / Paused</div>
+								<div className="mt-1 text-[11px] font-semibold" style={{ color: COLORS.textMuted }}>This quarter</div>
 							</div>
 						</div>
+					</div>
 
-						<div className="overflow-x-auto">
-						<table className="w-full min-w-180 border-collapse text-[12.5px]">
-							<thead>
-								<tr style={{ background: COLORS.bg, borderBottom: `1px solid #F0ECE5` }}>
-									{['Client', 'Tier', 'Amount', 'Status', 'Next renewal', 'Action'].map((heading) => (
-										<th key={heading} className="px-4 py-2.5 text-left text-[10px] font-extrabold uppercase tracking-widest" style={{ color: COLORS.textMuted }}>
-											{heading}
-										</th>
-									))}
-								</tr>
-							</thead>
-							<tbody>
-								{subscriptions.map((row) => (
-									<tr
-										key={row.client}
-										className="border-b transition cursor-pointer hover:opacity-95"
-										style={{ borderColor: '#F0ECE5', background: row.overdue ? 'rgba(198,61,47,.03)' : COLORS.card }}
-									>
-										<td className="px-4 py-3 align-middle">
-											<div className="flex items-center gap-2.5">
-												<div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ background: row.avatar }}>
-													{row.initials}
+					<div className="min-h-0 flex-1 overflow-y-auto bg-[#F7F5F2] px-4 pb-4 sm:px-5">
+						<div className="overflow-hidden rounded-2xl border bg-white" style={{ borderColor: COLORS.border, boxShadow: cardShadow }}>
+							<div className="hidden border-b px-5 py-2.5 md:grid md:grid-cols-[2fr_1fr_1fr_1fr_1.1fr_1.1fr_0.9fr] md:gap-2" style={{ borderColor: '#F2EEE8' }}>
+								{['Client', 'Advisor', 'Plan', 'MRR', 'Renewal', 'Status', 'Actions'].map((heading) => (
+									<div key={heading} className="text-[10px] font-extrabold uppercase tracking-widest" style={{ color: COLORS.textMuted }}>{heading}</div>
+								))}
+							</div>
+
+							<div className="divide-y" style={{ borderColor: '#F2EEE8' }}>
+								{filteredRows.map((row) => {
+									const tier = TIER_META[row.tier];
+									const status = statusMeta(row.status, row.daysOverdue);
+									const initials = row.name.split(' ').map((part) => part[0]).join('').slice(0, 2);
+									const advisorInitials = row.advisor.split(' ').map((part) => part[0]).join('').slice(0, 2);
+									const advisorColor = ADVISOR_COLORS[row.advisor] || COLORS.textMuted;
+									const rowBg = row.status === 'overdue' ? 'rgba(198,61,47,.03)' : COLORS.card;
+
+									return (
+										<div key={row.id} className="cursor-pointer px-4 py-3 transition hover:bg-[#FAFAF8] md:px-5" style={{ background: rowBg }} onClick={() => setActiveBillingId(row.id)}>
+											<div className="grid gap-3 md:hidden">
+												<div className="flex items-center justify-between gap-3">
+													<div className="flex items-center gap-2.5">
+														<div className="flex h-8 w-8 items-center justify-center rounded-lg text-[10px] font-extrabold text-white" style={{ background: tier.color }}>{initials}</div>
+														<div>
+															<div className="text-[13px] font-bold" style={{ color: COLORS.text }}>{row.name}</div>
+															<div className="text-[11px]" style={{ color: COLORS.textMuted }}>{row.location}</div>
+														</div>
+													</div>
+													<div className="text-right">
+														<div className="text-[14px] font-extrabold" style={{ color: COLORS.text }}>{formatMoney(row.mrr)}</div>
+														<div className="text-[10px]" style={{ color: COLORS.textMuted }}>per quarter</div>
+													</div>
 												</div>
-												<div>
-													<div className="text-[13px] font-bold" style={{ color: COLORS.text }}>{row.client}</div>
-													<div className="text-[11px]" style={{ color: COLORS.textMuted }}>{row.tierMeta}</div>
+												<div className="flex items-center justify-between gap-2">
+													<span className="inline-block rounded-md px-2 py-0.5 text-[11px] font-bold" style={{ background: tier.bg, color: tier.color }}>{row.tier} · {tier.label}</span>
+													<span className="inline-block rounded-full px-2.5 py-0.5 text-[11px] font-bold" style={{ background: status.bg, color: status.color, border: status.border ? `1px solid ${status.border}` : 'none' }}>{status.label}</span>
 												</div>
 											</div>
-										</td>
-										<td className="px-4 py-3 align-middle">
-											<span className="text-[10px] font-extrabold px-2 py-0.5 rounded-lg" style={{ background: row.tierBg, color: row.tierColor }}>
-												{row.tier}
-											</span>
-										</td>
-										<td className="px-4 py-3 align-middle text-[13px] font-bold" style={{ color: COLORS.text }}>{row.amount}</td>
-										<td className="px-4 py-3 align-middle">
-											<span className="text-[10px] font-extrabold px-2 py-0.5 rounded-lg" style={{ background: row.statusBg, color: row.statusColor }}>
-												{row.status}
-											</span>
-										</td>
-										<td className="px-4 py-3 align-middle text-[12.5px] font-semibold" style={{ color: row.renewalColor }}>{row.renewal}</td>
-										<td className="px-4 py-3 align-middle">
-											<button
-												className="rounded-[10px] px-3 py-1.5 text-[11.5px] font-bold border-[1.5px]"
-												style={{
-													background: COLORS.card,
-													borderColor: row.actionBorder || COLORS.border,
-													color: row.actionColor || COLORS.textSec,
-												}}
-											>
-												{row.action}
-											</button>
-										</td>
-									</tr>
+
+											<div className="hidden items-center gap-2 md:grid md:grid-cols-[2fr_1fr_1fr_1fr_1.1fr_1.1fr_0.9fr] md:gap-2">
+												<div className="flex items-center gap-2.5">
+													<div className="flex h-8 w-8 items-center justify-center rounded-lg text-[10px] font-extrabold text-white" style={{ background: tier.color }}>{initials}</div>
+													<div>
+														<div className="text-[13px] font-bold" style={{ color: COLORS.text }}>{row.name}</div>
+														<div className="text-[11px]" style={{ color: COLORS.textMuted }}>{row.location}</div>
+													</div>
+												</div>
+
+												<div className="flex items-center gap-2">
+													<div className="flex h-5 w-5 items-center justify-center rounded-md text-[8px] font-extrabold text-white" style={{ background: advisorColor }}>{advisorInitials}</div>
+													<div className="text-[12px]" style={{ color: COLORS.textSec }}>{row.advisor.split(' ')[0]}</div>
+												</div>
+
+												<div>
+													<span className="inline-block rounded-md px-2 py-0.5 text-[11px] font-bold" style={{ background: tier.bg, color: tier.color }}>{row.tier} · {tier.label}</span>
+												</div>
+
+												<div>
+													<div className="text-[13px] font-bold" style={{ color: COLORS.text }}>{formatMoney(row.mrr)}</div>
+													<div className="text-[11px]" style={{ color: COLORS.textMuted }}>per quarter</div>
+												</div>
+
+												<div>
+													<div className="text-[12.5px] font-semibold" style={{ color: row.status === 'overdue' ? COLORS.red : COLORS.text }}>{row.renewal}</div>
+													<div className="text-[11px]" style={{ color: COLORS.textMuted }}>Last: {row.lastPaid}</div>
+												</div>
+
+												<div>
+													<span className="inline-block rounded-full px-2.5 py-0.5 text-[11px] font-bold" style={{ background: status.bg, color: status.color, border: status.border ? `1px solid ${status.border}` : 'none' }}>
+														{status.label}
+													</span>
+												</div>
+
+												<div className="flex gap-1.5">
+													<button className="rounded-lg border px-2.5 py-1 text-[11px] font-bold" style={{ borderColor: COLORS.border, color: COLORS.textSec }} onClick={(e) => { e.stopPropagation(); setActiveBillingId(row.id); }}>Detail</button>
+													{!viewAll && row.status === 'overdue' && (
+														<button className="rounded-lg border px-2.5 py-1 text-[11px] font-bold" style={{ borderColor: 'rgba(198,61,47,.2)', color: COLORS.red, background: COLORS.redTint }} onClick={(e) => { e.stopPropagation(); openEmailTab(); }}>
+															Remind
+														</button>
+													)}
+												</div>
+											</div>
+										</div>
+									);
+								})}
+							</div>
+						</div>
+					</div>
+				</div>
+
+				{activeBilling && (
+					<div className="w-full border-t bg-white xl:w-96 xl:shrink-0 xl:border-l xl:border-t-0" style={{ borderColor: COLORS.border }}>
+						<div className="border-b px-4 py-4 sm:px-5" style={{ background: COLORS.navy, borderColor: COLORS.border }}>
+							<div className="mb-1 flex items-center justify-between gap-2">
+								<div className="text-sm font-bold text-white">Billing Detail</div>
+								<button className="rounded-lg border px-2 py-0.5 text-[11px] font-bold text-white" style={{ borderColor: 'rgba(255,255,255,.35)', background: 'rgba(255,255,255,.08)' }} onClick={() => setActiveBillingId(null)}>Close</button>
+							</div>
+							<div className="text-lg font-extrabold text-white">{activeBilling.name}</div>
+							<div className="text-xs" style={{ color: 'rgba(255,255,255,.55)' }}>{activeBilling.advisor} · {activeBilling.location}</div>
+						</div>
+
+						<div className="max-h-none overflow-visible px-4 py-4 sm:px-5 xl:max-h-[calc(100vh-170px)] xl:overflow-y-auto">
+							<div className="mb-4">
+								<div className="mb-2 border-b pb-1.5 text-[10px] font-extrabold uppercase tracking-widest" style={{ color: COLORS.textMuted, borderColor: COLORS.borderSoft }}>Subscription Summary</div>
+								{[
+									['Plan', `${activeBilling.tier} · ${TIER_META[activeBilling.tier].label}`],
+									['Quarterly MRR', formatMoney(activeBilling.mrr)],
+									['Lifetime Value', formatMoney(activeBilling.mrr * activeBilling.quarters)],
+									['Quarters Active', `${activeBilling.quarters}q`],
+									['Status', statusMeta(activeBilling.status, activeBilling.daysOverdue).label],
+									['Next Renewal', activeBilling.renewal],
+									['Last Payment', activeBilling.lastPaid],
+									['Days Overdue', activeBilling.daysOverdue > 0 ? `${activeBilling.daysOverdue}d` : '-'],
+								].map(([k, v]) => (
+									<div key={k} className="flex items-center justify-between border-b py-2" style={{ borderColor: COLORS.borderSoft }}>
+										<div className="text-[12.5px]" style={{ color: COLORS.textSec }}>{k}</div>
+										<div className="text-[12.5px] font-bold" style={{ color: COLORS.text }}>{v}</div>
+									</div>
 								))}
-								<tr style={{ opacity: 0.6 }}>
-									<td colSpan={6} className="text-center px-4 py-3 text-[12px]" style={{ color: COLORS.textMuted }}>
-										+ 17 more active subscribers · avg renewal rate 91%
-									</td>
-								</tr>
-							</tbody>
-						</table>
-						</div>
-					</div>
+							</div>
 
-					<div
-						style={{
-							backgroundColor: COLORS.card,
-							borderColor: COLORS.border,
-							boxShadow: '0 1px 3px rgba(31,41,55,0.04), 0 4px 16px rgba(31,41,55,0.04)',
-						}}
-						className="border rounded-[18px] overflow-hidden"
-					>
-						<div className="flex flex-col gap-1.5 border-b px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-5" style={{ borderColor: '#F0ECE5' }}>
-							<span className="text-[14px] font-bold tracking-[-0.01em]" style={{ color: COLORS.text }}>Quarterly revenue</span>
-							<span className="text-[12px]" style={{ color: COLORS.textSec }}>$349/quarter per client</span>
-						</div>
-						<div>
-							{revenueHistory.map((row) => (
-								<div key={row.quarter} className="border-b px-4 py-2.5 last:border-b-0 sm:px-5" style={{ borderColor: '#F0ECE5' }}>
-									<div className="text-[12px] font-bold mb-1.5" style={{ color: row.active ? COLORS.text : COLORS.textMuted }}>
-										{row.quarter}
-									</div>
-									<div className="flex items-center gap-2.5">
-										<div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: COLORS.border }}>
-											<div className="h-full rounded-full" style={{ width: row.width, background: row.barColor || COLORS.teal }}></div>
-										</div>
-										<div className="min-w-13 text-right text-[13px] font-extrabold" style={{ color: row.amountColor }}>
-											{row.amount}
-										</div>
-									</div>
+							<div className="mb-4">
+								<div className="mb-2 border-b pb-1.5 text-[10px] font-extrabold uppercase tracking-widest" style={{ color: COLORS.textMuted, borderColor: COLORS.borderSoft }}>RM Actions</div>
+								<div className="space-y-2">
+									{activeBilling.status === 'overdue' && !viewAll && (
+										<button className="w-full rounded-lg border-none px-3 py-2 text-left text-[13px] font-bold text-white" style={{ background: COLORS.red, boxShadow: '0 4px 14px rgba(198,61,47,.22)' }} onClick={openEmailTab}>
+											Send Payment Reminder
+										</button>
+									)}
+									{activeBilling.status === 'renewal' && !viewAll && (
+										<button className="w-full rounded-lg border-none px-3 py-2 text-left text-[13px] font-bold text-white" style={{ background: COLORS.red, boxShadow: '0 4px 14px rgba(198,61,47,.22)' }} onClick={openEmailTab}>
+											Send Renewal Reminder
+										</button>
+									)}
+									<button className="w-full rounded-lg border px-3 py-2 text-left text-[13px] font-bold" style={{ borderColor: COLORS.border, color: COLORS.textSec, background: COLORS.card }} onClick={openEmailTab}>
+										Send Email
+									</button>
+									<button className="w-full rounded-lg border px-3 py-2 text-left text-[13px] font-bold" style={{ borderColor: COLORS.border, color: COLORS.textSec, background: COLORS.card }}>
+										View Client Profile
+									</button>
 								</div>
-							))}
-							<div className="px-4 py-3 sm:px-5" style={{ background: COLORS.tealTint, color: COLORS.tealDeep }}>
-								<span className="text-[12px] leading-normal">
-									At 24 active clients × $349 = <strong>$8,376/month</strong> recurring revenue. Full year run rate: <strong>$100,512</strong>.
-								</span>
 							</div>
-						</div>
-					</div>
-				</div>
 
-				<div className="xl:sticky xl:top-4 xl:self-start">
-					<div
-						style={{
-							backgroundColor: COLORS.card,
-							borderColor: COLORS.border,
-							boxShadow: '0 1px 3px rgba(31,41,55,0.04), 0 4px 16px rgba(31,41,55,0.04)',
-						}}
-						className="border rounded-[18px] overflow-hidden mb-4"
-					>
-						<div className="border-b px-4 py-3.5 sm:px-5" style={{ borderColor: '#F0ECE5' }}>
-							<span className="text-[14px] font-bold tracking-[-0.01em]" style={{ color: COLORS.text }}>Upcoming renewals</span>
-						</div>
-						<div>
-							{renewals.map((row) => (
-								<div key={row.client} className="flex items-center justify-between gap-3 border-b px-4 py-2.5 last:border-b-0 sm:px-5" style={{ borderColor: '#F0ECE5' }}>
-									<div>
-										<div className="text-[12.5px] font-semibold" style={{ color: row.color === COLORS.red ? COLORS.red : COLORS.text }}>{row.client}</div>
-										<div className="text-[11px]" style={{ color: row.color }}>{row.date}</div>
-									</div>
-									<div className="text-right">
-										<div className="text-[13px] font-bold" style={{ color: row.tag === 'Overdue' ? COLORS.red : COLORS.teal }}>{row.amount}</div>
-										<span className="mt-0.5 inline-block text-[10px] font-extrabold px-2 py-0.5 rounded-lg" style={{ background: row.tagBg, color: row.tagColor }}>
-											{row.tag}
-										</span>
-									</div>
-								</div>
-							))}
-						</div>
-					</div>
-
-					<div
-						style={{
-							backgroundColor: COLORS.card,
-							borderColor: COLORS.border,
-							boxShadow: '0 1px 3px rgba(31,41,55,0.04), 0 4px 16px rgba(31,41,55,0.04)',
-						}}
-						className="border rounded-[18px] overflow-hidden"
-					>
-						<div className="border-b px-4 py-3.5 sm:px-5" style={{ borderColor: '#F0ECE5' }}>
-							<span className="text-[14px] font-bold tracking-[-0.01em]" style={{ color: COLORS.text }}>Revenue by tier</span>
-						</div>
-						<div style={{ paddingBottom: '4px' }}>
-							{tierRevenue.map((row) => (
-								<div key={row.label} className="flex items-center justify-between gap-3 border-b px-4 py-3 last:border-b-0 sm:px-5" style={{ borderColor: '#F0ECE5' }}>
-									<div>
-										<div className="flex items-center gap-2">
-											<div className="w-2.5 h-2.5 rounded-[3px]" style={{ background: row.dot }}></div>
-											<span className="text-[12.5px]" style={{ color: COLORS.textSec }}>{row.label}</span>
-										</div>
-										<div className="text-[11px] mt-0.5" style={{ color: COLORS.textMuted }}>{row.meta}</div>
-									</div>
-									<div className="text-right">
-										<div className="text-[14px] font-extrabold" style={{ color: row.countColor }}>{row.count}</div>
-										<div className="text-[11px]" style={{ color: COLORS.textMuted }}>{row.total}</div>
-									</div>
-								</div>
-							))}
-						</div>
-						<div className="px-4 py-3.5 text-center sm:px-5" style={{ background: COLORS.navy }}>
-							  <div className="text-[10px] font-extrabold uppercase tracking-widest mb-1" style={{ color: 'rgba(255,255,255,.4)' }}>
-								Total quarterly revenue
-							</div>
-							<div className="text-[26px] font-extrabold tracking-[-0.03em]" style={{ color: '#5ECFCA' }}>
-								$8,376
-							</div>
-							<div className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,.4)' }}>
-								$100,512 annualized
+							<div>
+								<div className="mb-2 border-b pb-1.5 text-[10px] font-extrabold uppercase tracking-widest" style={{ color: COLORS.textMuted, borderColor: COLORS.borderSoft }}>Notes</div>
+								<textarea value={noteDraft} onChange={(e) => setNoteDraft(e.target.value)} className="h-20 w-full resize-none rounded-[10px] border px-3 py-2 text-[13px] outline-none" style={{ borderColor: COLORS.border, background: COLORS.bg, color: COLORS.text }} />
+								<button className="mt-2 rounded-lg border-none px-3 py-1.5 text-xs font-bold text-white" style={{ background: COLORS.teal }} onClick={saveNote}>
+									Save Note
+								</button>
 							</div>
 						</div>
 					</div>
-				</div>
+				)}
 			</div>
 		</div>
 	);

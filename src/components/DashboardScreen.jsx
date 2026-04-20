@@ -1,252 +1,372 @@
-import React from 'react';
-import {
-  ArrowRight,
-  DollarSign,
-  Eye,
-  FileText,
-  Plus,
-  RefreshCw,
-  UserPlus,
-  Users,
-  Video,
-} from 'lucide-react';
+import React, { useState } from 'react';
 import { COLORS, cardShadow } from './tatcaresShared';
 
-const GreetingBanner = () => (
-  <div className="mb-5 flex flex-col gap-5 rounded-[18px] px-4 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-7 lg:py-6" style={{ background: COLORS.navy }}>
-    <div className="min-w-0">
-      <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/45 mb-1.5">
-        Wednesday, April 15, 2026 · Tax deadline day
-      </div>
-      <div className="text-[26px] font-extrabold tracking-[-0.03em] text-white leading-tight">Good morning, Yvonne.</div>
-      <div className="text-[13px] text-white/55 mt-1">You have 3 consultations today and 2 proposals waiting for review.</div>
+const plum = '#5B4A8B';
+const navy = COLORS.navy;   // #1B3A5C
+const teal = COLORS.teal;   // #2F7D79
+const red = COLORS.red;     // #C63D2F
+const gold = COLORS.gold;   // #B8860B
+const green = COLORS.green; // #1A7A4A
+
+/* ── Greeting ─────────────────────────────────────────── */
+const Greeting = () => (
+  <div className="mb-5 sm:mb-5.5">
+    <div className="mb-1 text-[20px] font-extrabold text-[#1B3A5C] sm:text-[22px]" style={{ fontFamily: 'Poppins, sans-serif' }}>
+      Good morning, Angela
     </div>
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4 lg:flex lg:gap-5">
-      {[
-        { n: '$1.2M', l: 'Client savings YTD', h: true },
-        { n: '24', l: 'Active clients' },
-        { n: '91%', l: 'Renewal rate' },
-      ].map((s) => (
-        <div key={s.l} className="min-w-0 rounded-xl px-4 py-3.5 text-center sm:min-w-27.5 sm:px-5" style={{ background: 'rgba(255,255,255,.08)' }}>
-          <div className="text-2xl font-extrabold tracking-[-0.03em] leading-none" style={{ color: s.h ? '#5ECFCA' : '#fff' }}>
-            {s.n}
-          </div>
-          <div className="text-[10px] font-semibold uppercase tracking-[0.04em] text-white/45 mt-1">{s.l}</div>
-        </div>
-      ))}
+    <div className="text-[12px] text-[#667085] sm:text-[13px]">
+      Wednesday, April 15, 2026 &middot; 5 open tasks &middot; 3 meetings today
     </div>
   </div>
 );
 
-const KPICard = ({ label, value, delta, tone, icon: Icon }) => {
-  const toneMap = {
-    teal: { bg: COLORS.tealTint, stroke: COLORS.teal },
-    red: { bg: COLORS.redTint, stroke: COLORS.red },
-    green: { bg: '#E8F5EE', stroke: COLORS.green },
-    gold: { bg: '#FEF9EE', stroke: COLORS.gold },
-  };
-  const deltaClass = tone === 'green' ? COLORS.green : tone === 'red' ? COLORS.red : COLORS.textMuted;
+/* ── KPI Stat Card ────────────────────────────────────── */
+const StatCard = ({ label, value, barColor, barPct, sub }) => (
+  <div className="rounded-[14px] border border-[#E7E3DD] bg-white p-[16px_16px] sm:p-[18px_20px]" style={{ boxShadow: cardShadow }}>
+    <div className="text-[11px] font-bold uppercase tracking-[0.07em] text-[#98A2B3] mb-1.5">
+      {label}
+    </div>
+    <div className="mb-2.5 text-[24px] font-extrabold leading-none sm:text-[28px]" style={{ color: barColor }}>
+      {value}
+    </div>
+    <div className="h-1.25 rounded-full bg-[#E7E3DD] overflow-hidden mb-1.5">
+      <div className="h-full rounded-full" style={{ width: `${barPct}%`, background: barColor }} />
+    </div>
+    <div className="text-[11px] text-[#98A2B3]">{sub}</div>
+  </div>
+);
 
+/* ── Alert Banner ─────────────────────────────────────── */
+const AlertBanner = ({ tone, text, actionLabel }) => {
+  const isRed = tone === 'red';
+  const bg = isRed ? '#FDEBE8' : '#FEF9EE';
+  const borderColor = isRed ? red : gold;
+  const iconColor = isRed ? red : gold;
+  const textColor = isRed ? '#7B1D13' : '#5a3e00';
   return (
-    <div className="flex items-start justify-between gap-3 rounded-[14px] border px-4 py-4 sm:px-5" style={{ background: COLORS.card, borderColor: COLORS.border, boxShadow: cardShadow }}>
-      <div>
-        <div className="text-[11px] font-bold uppercase tracking-[0.08em] mb-1.5" style={{ color: COLORS.textMuted }}>
+    <div className="mb-2.5 flex flex-col items-start gap-2 rounded-[10px] border-[1.5px] p-[12px_14px] sm:flex-row sm:gap-2.5 sm:p-[12px_16px]" style={{ background: bg, borderColor }}>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={iconColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-px">
+        <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+      </svg>
+      <div className="flex-1 text-[13px] leading-[1.45]" style={{ color: textColor }}>{text}</div>
+      {actionLabel && (
+        <button className="cursor-pointer border-none bg-transparent pl-0 text-[11px] font-bold sm:shrink-0 sm:whitespace-nowrap sm:pl-2" style={{ color: iconColor }}>
+          {actionLabel}
+        </button>
+      )}
+    </div>
+  );
+};
+
+/* ── Task Row ─────────────────────────────────────────── */
+const TaskRow = ({ label, priority, due, initialDone = false, note, onToggle }) => {
+  const [done, setDone] = useState(initialDone);
+  const priorityColor = priority === 'High' ? red : priority === 'Medium' ? gold : '#98A2B3';
+  const priorityBg = priority === 'High' ? '#FDEBE8' : priority === 'Medium' ? '#FEF9EE' : '#E7E3DD';
+  const toggle = () => {
+    setDone(prev => !prev);
+    onToggle?.();
+  };
+  return (
+    <div className="flex items-start gap-2.5 border-b border-[#F0ECE5] px-4 py-2.5 sm:px-5">
+      <button
+        onClick={toggle}
+        className="w-4 h-4 rounded-full border-2 shrink-0 mt-0.5 flex items-center justify-center cursor-pointer bg-transparent p-0"
+        style={{ borderColor: done ? green : '#E7E3DD', background: done ? green : 'transparent' }}
+        aria-label={done ? 'Mark incomplete' : 'Mark complete'}
+      >
+        {done && (
+          <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="2,6 5,9 10,3" />
+          </svg>
+        )}
+      </button>
+      <div className="flex-1 min-w-0">
+        <div className={`text-[13px] leading-[1.4] ${done ? 'line-through text-[#98A2B3]' : 'text-[#1F2937]'}`}>
           {label}
         </div>
-        <div className="text-[26px] font-extrabold tracking-[-0.03em] leading-none" style={{ color: COLORS.text }}>
-          {value}
+        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+          {priority && !done && (
+            <span className="text-[10px] font-bold px-1.75 py-0.5 rounded-full" style={{ color: priorityColor, background: priorityBg }}>
+              {priority}
+            </span>
+          )}
+          {due && <span className="text-[11px] text-[#98A2B3]">{due}</span>}
+          {note && <span className="text-[11px] font-bold text-[#C63D2F]">{note}</span>}
         </div>
-        <div className="text-[11px] font-semibold mt-1" style={{ color: deltaClass }}>
-          {delta}
-        </div>
-      </div>
-      <div className="w-9 h-9 rounded-[10px] flex items-center justify-center" style={{ background: toneMap[tone].bg }}>
-        <Icon size={16} strokeWidth={2} color={toneMap[tone].stroke} />
       </div>
     </div>
   );
 };
 
-const MeetingRow = ({ time, now, color, name, type, tag, tagClass }) => (
-  <div className="flex flex-col gap-3 border-b px-4 py-3.5 sm:px-5 md:flex-row md:items-center md:gap-3.5" style={{ borderColor: COLORS.borderSoft }}>
-    <div className="text-xs font-bold md:w-15.5 md:text-right" style={{ color: now ? COLORS.red : COLORS.textMuted }}>
-      {time}
+/* ── Pipeline Stage Group ─────────────────────────────── */
+const PipelineStage = ({ stageName, count, stageColor, clients }) => (
+  <div className="border-b border-[#F0ECE5] px-4 py-2.5 sm:px-5">
+    <div className="flex items-center gap-2 mb-1.5">
+      <div className="w-2 h-2 rounded-full shrink-0" style={{ background: stageColor }} />
+      <div className="text-[12px] font-bold text-[#667085] flex-1">{stageName}</div>
+      <span className="text-[11px] font-extrabold px-2 py-px rounded-full" style={{ color: stageColor, background: `${stageColor}22` }}>{count}</span>
     </div>
-    <div className="h-0.75 w-full rounded md:h-10 md:w-0.75" style={{ background: color }}></div>
+    {clients.map((c, i) => (
+      <div key={i} className="mb-1 flex items-center gap-2 pl-3.5 sm:pl-4">
+        <div className="text-[12px] text-[#1F2937] flex-1">{c.name}</div>
+        <span className="text-[10px] font-bold px-1.75 py-0.5 rounded-full" style={{ color: c.tagColor, background: `${c.tagColor}18` }}>{c.tag}</span>
+      </div>
+    ))}
+  </div>
+);
+
+/* ── Meeting Row ──────────────────────────────────────── */
+const MeetingRow = ({ time, name, detail, dotColor, actionLabel, actionColor }) => (
+  <div className="flex flex-col items-start gap-2 border-b border-[#F0ECE5] px-4 py-2.5 sm:flex-row sm:items-center sm:gap-3 sm:px-5">
+    <div className="w-2 h-2 rounded-full shrink-0" style={{ background: dotColor }} />
     <div className="flex-1 min-w-0">
-      <div className="text-[13px] font-bold" style={{ color: COLORS.text }}>{name}</div>
-      <div className="text-[11.5px] mt-0.5" style={{ color: COLORS.textSec }}>
-        {type}
-        {tag && <span className={`ml-1.5 inline-block text-[10px] font-extrabold px-2 py-0.5 rounded-lg ${tagClass}`}>{tag}</span>}
-      </div>
+      <div className="text-[12px] font-bold text-[#98A2B3] mb-0.5">{time}</div>
+      <div className="text-[13px] font-bold text-[#1F2937]">{name}</div>
+      <div className="text-[12px] text-[#667085]">{detail}</div>
     </div>
-    <div className="flex gap-1.5 md:self-center">
-      {[Video, FileText].map((Icon, idx) => (
-        <button key={idx} className="w-7 h-7 rounded-lg border flex items-center justify-center" style={{ background: COLORS.bg, borderColor: COLORS.border }}>
-          <Icon size={13} color={COLORS.textMuted} />
+    {actionLabel && (
+      <button
+        className="cursor-pointer rounded-lg border px-3 py-1.25 text-[11px] font-bold sm:shrink-0"
+        style={{ color: actionColor || teal, background: `${actionColor || teal}15`, borderColor: `${actionColor || teal}40` }}
+      >
+        {actionLabel}
+      </button>
+    )}
+  </div>
+);
+
+/* ── Access Row ───────────────────────────────────────── */
+const AccessRow = ({ label, allowed }) => (
+  <div className="flex items-start justify-between gap-2 border-b border-[#F0ECE5] py-1.75">
+    <span className={`text-[12px] leading-[1.35] ${allowed ? 'text-[#1F2937]' : 'text-[#98A2B3]'}`}>{label}</span>
+    {allowed ? (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={green} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="20,6 9,17 4,12" />
+      </svg>
+    ) : (
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#98A2B3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+      </svg>
+    )}
+  </div>
+);
+
+/* ── Card Shell ───────────────────────────────────────── */
+const Card = ({ title, actionLabel, onAction, children }) => (
+  <div className="mb-4 overflow-hidden rounded-2xl border border-[#E7E3DD] bg-white" style={{ boxShadow: cardShadow }}>
+    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#F0ECE5] px-4 py-3.5 sm:px-5">
+      <div className="text-[13px] font-bold text-[#1F2937]">{title}</div>
+      {actionLabel && (
+        <button onClick={onAction} className="text-[11px] font-bold text-[#2F7D79] bg-transparent border-none cursor-pointer">
+          {actionLabel}
         </button>
-      ))}
+      )}
     </div>
+    {children}
   </div>
 );
 
-const AlertRow = ({ dot, name, tag, tagClass, message, time }) => (
-  <div className="flex flex-col gap-2 border-b px-4 py-3.5 sm:px-5 md:flex-row md:items-start md:gap-3" style={{ borderColor: COLORS.borderSoft }}>
-    <div className="flex items-start gap-3 md:flex-1">
-    <div className="w-2 h-2 rounded-full mt-1.5" style={{ background: dot }}></div>
-    <div className="min-w-0 flex-1">
-      <div className="text-[13px] font-bold" style={{ color: COLORS.text }}>
-        {name}
-        <span className={`ml-1.5 inline-block text-[10px] font-extrabold px-2 py-0.5 rounded-lg ${tagClass}`}>{tag}</span>
-      </div>
-      <div className="text-xs mt-0.5 leading-[1.4]" style={{ color: COLORS.textSec }}>{message}</div>
-    </div>
-    </div>
-    <div className="text-[11px] md:mt-0.5 md:shrink-0" style={{ color: COLORS.textMuted }}>{time}</div>
-  </div>
-);
+/* ── Main Dashboard ───────────────────────────────────── */
+const INITIAL_TASKS = [
+  { id: 1, label: 'Send Sandra Kim meeting confirmation + Zoom link', priority: 'High', due: 'Due Today', done: false },
+  { id: 2, label: 'Send Ashley qualification link to Brian Wallace', priority: 'High', due: 'Due Today', note: '6 days overdue', done: false },
+  { id: 3, label: 'Review 3 Advisor reassignment requests', priority: 'Medium', due: 'Due Apr 17', done: false },
+  { id: 4, label: 'Follow up Tina Brooks — consult not booked', priority: 'Medium', due: 'Due Apr 17', done: false },
+  { id: 5, label: 'Send 1040 upload reminder to Sandra Kim', priority: 'Medium', due: 'Due Apr 18', done: false },
+  { id: 6, label: 'Add notes from Marcus Johnson discovery call', priority: null, due: 'Completed · Apr 14', done: true },
+];
 
-const ScoreRow = ({ initials, avatar, name, tier, score, bar, tag, tagClass }) => (
-  <div className="flex flex-col gap-3 border-b px-4 py-3 sm:px-5 md:flex-row md:items-center md:justify-between" style={{ borderColor: COLORS.borderSoft }}>
-    <div className="flex items-center gap-2.5">
-      <div className="flex h-7.5 w-7.5 items-center justify-center rounded-full text-[11px] font-bold text-white" style={{ background: avatar }}>{initials}</div>
-      <div>
-        <div className="text-[13px] font-semibold" style={{ color: COLORS.text }}>{name}</div>
-        <div className="text-[10px]" style={{ color: COLORS.textMuted }}>{tier}</div>
-      </div>
-    </div>
-    <div className="flex flex-wrap items-center gap-2 md:justify-end">
-      <div className="h-1 w-18 overflow-hidden rounded-full" style={{ background: COLORS.border }}>
-        <div className="h-full rounded-full" style={{ width: `${score}%`, background: bar }}></div>
-      </div>
-      <div className="w-6 text-right text-sm font-extrabold" style={{ color: bar }}>{score}</div>
-      <span className={`inline-block text-[10px] font-extrabold px-2 py-0.5 rounded-lg ${tagClass}`}>{tag}</span>
-    </div>
-  </div>
-);
+export default function DashboardScreen({ onScreenChange }) {
+  const [tasks, setTasks] = useState(INITIAL_TASKS);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newTaskLabel, setNewTaskLabel] = useState('');
+  const [newTaskPriority, setNewTaskPriority] = useState('Medium');
+  const [newTaskDue, setNewTaskDue] = useState('');
 
-const StageRow = ({ dot, name, count, width, strong }) => (
-  <div className="flex flex-col gap-2 border-b px-4 py-2.5 sm:px-5 md:flex-row md:items-center md:justify-between" style={{ borderColor: COLORS.borderSoft }}>
-    <div className="flex items-center gap-2.5">
-      <div className="w-2 h-2 rounded-full" style={{ background: dot }}></div>
-      <div className="text-[13px]" style={{ color: name === 'Lead captured' ? COLORS.textMuted : COLORS.text }}>{name}</div>
-    </div>
-    <div className="flex items-center gap-2.5 md:justify-end">
-      <div className="h-1 w-15 overflow-hidden rounded-full" style={{ background: COLORS.border }}>
-        <div className="h-full rounded-full" style={{ width: `${width}%`, background: dot }}></div>
-      </div>
-      <div className="text-[15px] font-extrabold" style={{ color: strong ? COLORS.green : COLORS.text }}>{count}</div>
-    </div>
-  </div>
-);
+  const toggleTask = (id) => {
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, done: !t.done } : t));
+  };
 
-const ActivityRow = ({ initials, bg, text, time }) => (
-  <div className="flex flex-col gap-2 border-b px-4 py-3 sm:px-5 md:flex-row md:items-start md:gap-3" style={{ borderColor: COLORS.borderSoft }}>
-    <div className="flex items-start gap-3 md:flex-1">
-    <div className="w-7 h-7 rounded-full text-[10px] font-bold text-white flex items-center justify-center" style={{ background: bg }}>{initials}</div>
-    <div className="flex-1 text-[12.5px] leading-[1.4]" style={{ color: COLORS.textSec }}>{text}</div>
-    </div>
-    <div className="text-[11px] md:mt-0.5 md:shrink-0" style={{ color: COLORS.textMuted }}>{time}</div>
-  </div>
-);
+  const addTask = () => {
+    if (!newTaskLabel.trim()) return;
+    setTasks(prev => [
+      ...prev,
+      { id: Date.now(), label: newTaskLabel.trim(), priority: newTaskPriority, due: newTaskDue || 'No due date', done: false },
+    ]);
+    setNewTaskLabel('');
+    setNewTaskDue('');
+    setNewTaskPriority('Medium');
+    setShowAddForm(false);
+  };
 
-export default function DashboardScreen() {
   return (
-    <div className="px-4 pb-6 pt-4 sm:px-5 sm:pb-8 sm:pt-5 lg:px-7 lg:pt-6">
-      <GreetingBanner />
+    <div className="px-4 py-5 sm:px-5 sm:py-6 lg:px-7">
+      <Greeting />
 
-      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-4">
-        <KPICard label="Active TATCares clients" value="24" delta="↑ 3 from last quarter" tone="green" icon={Users} />
-        <KPICard label="Open proposals" value="7" delta="2 awaiting your review" tone="red" icon={ArrowRight} />
-        <KPICard label="Revenue this quarter" value="$41.2K" delta="↑ 18% vs last quarter" tone="green" icon={DollarSign} />
-        <KPICard label="Renewals due this month" value="6" delta="3 high, 2 medium risk" tone="gold" icon={RefreshCw} />
+      {/* KPI Stat Cards */}
+      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3.5 xl:grid-cols-4">
+        <StatCard label="Total Clients" value="24" barColor={navy} barPct={80} sub="Active managed clients" />
+        <StatCard label="Meetings Today" value="3" barColor={teal} barPct={100} sub="All sessions confirmed" />
+        <StatCard label="Reassignment Requests" value="3" barColor={gold} barPct={30} sub="Pending your review" />
+        <StatCard label="Urgent Actions" value="2" barColor={red} barPct={25} sub="Require immediate attention" />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+      {/* Alert Banners */}
+      <div className="mb-5">
+        <AlertBanner tone="red" text={<><strong>Brian Wallace</strong> — Qualification link never sent. Lead is 2+ days old.</>} actionLabel="Take Action" />
+        <AlertBanner tone="gold" text={<><strong>Tina Brooks</strong> — Consultation not booked after 3 days.</>} actionLabel="Follow Up" />
+        <AlertBanner tone="gold" text={<><strong>3 Advisor reassignment requests</strong> pending your review.</>} actionLabel="Review" />
+      </div>
+
+      {/* Two-column layout */}
+      <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-2">
+
+        {/* Left Column */}
         <div>
-          <div className="rounded-[18px] border overflow-hidden mb-4" style={{ background: COLORS.card, borderColor: COLORS.border, boxShadow: cardShadow }}>
-            <div className="flex flex-col gap-2 border-b px-4 py-3.5 sm:px-5 md:flex-row md:items-center md:justify-between" style={{ borderColor: COLORS.borderSoft }}>
-              <div className="text-sm font-bold" style={{ color: COLORS.text }}>Today's consultations</div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-block text-[10px] font-extrabold px-2 py-0.5 rounded-lg" style={{ background: COLORS.redTint, color: COLORS.red }}>3 today</span>
-                <button className="text-[11px] font-bold rounded-[10px] px-3 py-1.5 border" style={{ borderColor: COLORS.border, color: COLORS.textSec, background: COLORS.card }}>View all meetings</button>
+          <Card title="My Tasks" actionLabel="+ Add" onAction={() => setShowAddForm(v => !v)}>
+            {tasks.map(t => (
+              <TaskRow
+                key={t.id}
+                label={t.label}
+                priority={t.priority}
+                due={t.due}
+                note={t.note}
+                initialDone={t.done}
+                onToggle={() => toggleTask(t.id)}
+              />
+            ))}
+            {showAddForm && (
+              <div className="flex flex-col gap-2 border-b border-[#F0ECE5] px-4 py-3 sm:px-5">
+                <input
+                  autoFocus
+                  className="w-full text-[13px] border border-[#E7E3DD] rounded-lg px-3 py-2 outline-none focus:border-[#2F7D79]"
+                  placeholder="Task description…"
+                  value={newTaskLabel}
+                  onChange={e => setNewTaskLabel(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && addTask()}
+                />
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <select
+                    className="cursor-pointer rounded-lg border border-[#E7E3DD] px-2 py-1.5 text-[11px] font-bold outline-none sm:w-auto"
+                    value={newTaskPriority}
+                    onChange={e => setNewTaskPriority(e.target.value)}
+                  >
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                  </select>
+                  <input
+                    className="flex-1 rounded-lg border border-[#E7E3DD] px-2 py-1.5 text-[11px] outline-none focus:border-[#2F7D79]"
+                    placeholder="Due date (e.g. Due Today)"
+                    value={newTaskDue}
+                    onChange={e => setNewTaskDue(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && addTask()}
+                  />
+                </div>
+                <div className="flex flex-col justify-end gap-2 sm:flex-row">
+                  <button
+                    onClick={() => setShowAddForm(false)}
+                    className="cursor-pointer rounded-lg border border-[#E7E3DD] bg-transparent px-3 py-1.5 text-[11px] font-bold text-[#98A2B3]"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={addTask}
+                    className="cursor-pointer rounded-lg border-none px-3 py-1.5 text-[11px] font-bold text-white"
+                    style={{ background: teal }}
+                  >
+                    Add Task
+                  </button>
+                </div>
               </div>
-            </div>
-            <MeetingRow time="9:00 AM" now color={COLORS.red} name="Sandra Kim" type="Q1 Strategy review · TATCares T2 · FFS 52" tag="At risk" tagClass="bg-[#FEF9EE] text-[#7a5a00]" />
-            <MeetingRow time="1:00 PM" color={COLORS.teal} name="Jordan Crawford" type="Proposal delivery · TATCares T3 · FFS 68" tag="Building" tagClass="bg-[#E8F3F1] text-[#1F5E5B]" />
-            <MeetingRow time="3:30 PM" color="#5B4A8B" name="Marcus Johnson" type="New client intake · Discovery call" />
-          </div>
+            )}
+          </Card>
 
-          <div className="rounded-[18px] border overflow-hidden mb-4" style={{ background: COLORS.card, borderColor: COLORS.border, boxShadow: cardShadow }}>
-            <div className="flex flex-col gap-2 border-b px-4 py-3.5 sm:px-5 md:flex-row md:items-center md:justify-between" style={{ borderColor: COLORS.borderSoft }}>
-              <div className="text-sm font-bold" style={{ color: COLORS.text }}>Clients needing attention</div>
-              <span className="inline-block text-[10px] font-extrabold px-2 py-0.5 rounded-lg" style={{ background: COLORS.redTint, color: COLORS.red }}>5 alerts</span>
-            </div>
-            <AlertRow dot={COLORS.red} name="Derek Wilson" tag="Renewal overdue" tagClass="bg-[#FDEBE8] text-[#C63D2F]" message="Q1 renewal was due Apr 1 — no payment received. At risk of churn. Last contact was 18 days ago." time="18d ago" />
-            <AlertRow dot={COLORS.red} name="Priya Sharma" tag="FFS dropped" tagClass="bg-[#FEF9EE] text-[#7a5a00]" message="Score dropped from 71 to 54 after updated income data. Strategy review needed before next check-in." time="2d ago" />
-            <AlertRow dot={COLORS.gold} name="Robert Chen" tag="Renewal in 7 days" tagClass="bg-[#FEF9EE] text-[#7a5a00]" message="Q2 renewal due Apr 22. No strategy updates since onboarding. Consider scheduling a progress call." time="Apr 22" />
-            <AlertRow dot={COLORS.gold} name="Lisa Nguyen" tag="No contact 30d" tagClass="bg-[#FEF9EE] text-[#7a5a00]" message="No advisor touchpoint in 30 days. Questionnaire completed but proposal not yet started." time="30d ago" />
-            <AlertRow dot={COLORS.teal} name="James Park" tag="Proposal ready" tagClass="bg-[#E8F3F1] text-[#1F5E5B]" message="Proposal for 2024 is built and ready. Client hasn't opened it yet — consider a follow-up." time="3d ago" />
-          </div>
-
-          <div className="rounded-[18px] border overflow-hidden" style={{ background: COLORS.card, borderColor: COLORS.border, boxShadow: cardShadow }}>
-            <div className="flex flex-col gap-2 border-b px-4 py-3.5 sm:px-5 md:flex-row md:items-center md:justify-between" style={{ borderColor: COLORS.borderSoft }}>
-              <div className="text-sm font-bold" style={{ color: COLORS.text }}>Client Freedom Scores</div>
-              <button className="text-xs font-bold" style={{ color: COLORS.tealDeep }}>Score all clients →</button>
-            </div>
-            <ScoreRow initials="JC" avatar="#1A7A4A" name="Jordan Crawford" tier="T3 · Advisor" score={68} bar="#2F7D79" tag="Building" tagClass="bg-[#E8F3F1] text-[#1F5E5B]" />
-            <ScoreRow initials="SK" avatar="#B8860B" name="Sandra Kim" tier="T2 · Planner" score={52} bar="#B8860B" tag="At risk" tagClass="bg-[#FEF9EE] text-[#7a5a00]" />
-            <ScoreRow initials="PS" avatar="#2F7D79" name="Priya Sharma" tier="T2 · Planner" score={54} bar="#B8860B" tag="At risk" tagClass="bg-[#FEF9EE] text-[#7a5a00]" />
-            <ScoreRow initials="RC" avatar="#5B4A8B" name="Robert Chen" tier="T1 · Starter" score={79} bar="#2F7D79" tag="Optimized" tagClass="bg-[#E8F3F1] text-[#1F5E5B]" />
-            <ScoreRow initials="LN" avatar="#2C5F7F" name="Lisa Nguyen" tier="T2 · Planner" score={38} bar="#C63D2F" tag="Critical" tagClass="bg-[#FDEBE8] text-[#C63D2F]" />
-          </div>
+          <Card
+            title="Pipeline — My Stages (1–3)"
+            actionLabel="View All →"
+            onAction={() => onScreenChange?.('pipeline')}
+          >
+            <PipelineStage
+              stageName="New Leads"
+              count={3}
+              stageColor={navy}
+              clients={[
+                { name: 'Marcus Johnson', tag: 'Ashley Pending', tagColor: gold },
+                { name: 'Brian Wallace', tag: 'Urgent', tagColor: red },
+              ]}
+            />
+            <PipelineStage
+              stageName="Ashley Qualified"
+              count={2}
+              stageColor={teal}
+              clients={[
+                { name: 'Tina Brooks', tag: 'Follow Up', tagColor: gold },
+                { name: 'Kevin Marsh', tag: 'Booked', tagColor: green },
+              ]}
+            />
+            <PipelineStage
+              stageName="Intake In Progress"
+              count={3}
+              stageColor={plum}
+              clients={[
+                { name: 'Sandra Kim', tag: '1040 Missing', tagColor: red },
+                { name: 'Lisa Nguyen', tag: 'Churn Risk', tagColor: red },
+              ]}
+            />
+          </Card>
         </div>
 
+        {/* Right Column */}
         <div>
-          <div className="rounded-[18px] border overflow-hidden mb-4" style={{ background: COLORS.card, borderColor: COLORS.border, boxShadow: cardShadow }}>
-            <div className="flex flex-col gap-2 border-b px-4 py-3.5 sm:px-5 md:flex-row md:items-center md:justify-between" style={{ borderColor: COLORS.borderSoft }}>
-              <div className="text-sm font-bold" style={{ color: COLORS.text }}>Pipeline snapshot</div>
-              <button className="text-xs font-bold" style={{ color: COLORS.tealDeep }}>Full board →</button>
-            </div>
-            <StageRow dot="#98A2B3" name="Lead captured" count="8" width={100} />
-            <StageRow dot="#B8860B" name="Questionnaire sent" count="5" width={62} />
-            <StageRow dot="#2F7D79" name="Intake complete" count="3" width={37} />
-            <StageRow dot="#C63D2F" name="Proposal in review" count="2" width={25} />
-            <StageRow dot="#5B4A8B" name="Plan delivered" count="3" width={37} />
-            <StageRow dot="#1A7A4A" name="Active subscriber" count="24" width={100} strong />
-          </div>
+          <Card
+            title="Today's Meetings"
+            actionLabel="View All →"
+            onAction={() => onScreenChange?.('meetings')}
+          >
+            <MeetingRow time="10:00 AM" name="Sandra Kim" detail="30-min discovery · Zoom" dotColor={teal} actionLabel="Join" actionColor={teal} />
+            <MeetingRow time="1:00 PM" name="Tina Brooks" detail="Consultation follow-up" dotColor={plum} actionLabel="Prep" actionColor={plum} />
+            <MeetingRow time="3:30 PM" name="Marcus Johnson" detail="Discovery call · Zoom" dotColor={gold} actionLabel="Prep" actionColor={gold} />
+          </Card>
 
-          <div className="rounded-[18px] border overflow-hidden mb-4" style={{ background: COLORS.card, borderColor: COLORS.border, boxShadow: cardShadow }}>
-            <div className="flex flex-col gap-2 border-b px-4 py-3.5 sm:px-5 md:flex-row md:items-center md:justify-between" style={{ borderColor: COLORS.borderSoft }}>
-              <div className="text-sm font-bold" style={{ color: COLORS.text }}>Recent activity</div>
-              <button className="text-xs font-bold" style={{ color: COLORS.tealDeep }}>View all →</button>
-            </div>
-            <ActivityRow initials="JC" bg="#1A7A4A" text={<><strong style={{ color: COLORS.text }}>Jordan Crawford</strong> opened the 2024 proposal. Viewed for 4 minutes.</>} time="12m ago" />
-            <ActivityRow initials="SK" bg="#2F7D79" text={<><strong style={{ color: COLORS.text }}>Sandra Kim</strong> completed the strategy questionnaire. FFS score pending.</>} time="1h ago" />
-            <ActivityRow initials="MJ" bg="#5B4A8B" text={<><strong style={{ color: COLORS.text }}>Marcus Johnson</strong> booked a discovery call for today at 3:30 PM.</>} time="3h ago" />
-            <ActivityRow initials="PS" bg="#B8860B" text={<><strong style={{ color: COLORS.text }}>Priya Sharma</strong>'s income data updated. FFS score dropped from 71 → 54.</>} time="2d ago" />
-            <ActivityRow initials="DW" bg="#C63D2F" text={<><strong style={{ color: COLORS.text }}>Derek Wilson</strong> missed Q1 renewal. Payment not received as of Apr 1.</>} time="14d ago" />
-          </div>
+          <Card title="My Access Level">
+            <div className="p-[14px_16px] sm:p-[14px_20px]">
+              <span
+                className="inline-block text-[11px] font-bold rounded-full px-3 py-0.75 mb-3.5 border"
+                style={{ color: teal, background: `${teal}18`, borderColor: `${teal}40` }}
+              >
+                RM &middot; Full Access
+              </span>
 
-          <div className="rounded-[18px] border overflow-hidden" style={{ background: COLORS.card, borderColor: COLORS.border, boxShadow: cardShadow }}>
-            <div className="border-b px-4 py-3.5 sm:px-5" style={{ borderColor: COLORS.borderSoft }}>
-              <div className="text-sm font-bold" style={{ color: COLORS.text }}>Quick actions</div>
+              <div className="text-[11px] font-bold uppercase tracking-[0.07em] text-[#98A2B3] mb-1">
+                Client Management
+              </div>
+              <AccessRow label="View & manage all assigned clients" allowed />
+              <AccessRow label="Add / remove clients from pipeline" allowed />
+              <AccessRow label="Update client profiles & contact info" allowed />
+
+              <div className="text-[11px] font-bold uppercase tracking-[0.07em] text-[#98A2B3] mt-3 mb-1">
+                Documents, Intake & Billing
+              </div>
+              <AccessRow label="Upload & access client documents" allowed />
+              <AccessRow label="Manage intake & qualification steps" allowed />
+              <AccessRow label="View billing history & payment status" allowed />
+
+              <div className="text-[11px] font-bold uppercase tracking-[0.07em] text-[#98A2B3] mt-3 mb-1">
+                Reporting & Messaging
+              </div>
+              <AccessRow label="Send emails & notifications" allowed />
+              <AccessRow label="View client-facing reports" allowed />
+
+              <div className="text-[11px] font-bold uppercase tracking-[0.07em] text-[#98A2B3] mt-3 mb-1">
+                Restricted — Advisor Only
+              </div>
+              <AccessRow label="Edit Freedom Score methodology" allowed={false} />
+              <AccessRow label="Manage advisor accounts & roles" allowed={false} />
+              <AccessRow label="Access billing & subscription settings" allowed={false} />
             </div>
-            <div className="p-4 flex flex-col gap-2">
-              <button className="w-full rounded-[10px] px-4 py-2.5 text-white text-xs font-bold flex items-center justify-center gap-2" style={{ background: COLORS.red, boxShadow: '0 4px 14px rgba(198,61,47,.25),0 1px 3px rgba(198,61,47,.15)' }}>
-                <Plus size={13} strokeWidth={2.5} />
-                Start new proposal
-              </button>
-              <button className="w-full rounded-[10px] px-4 py-2.5 text-xs font-bold flex items-center justify-center gap-2 border" style={{ background: COLORS.card, borderColor: COLORS.border, color: COLORS.textSec }}>
-                <Eye size={13} />
-                Score a client (FFS)
-              </button>
-              <button className="w-full rounded-[10px] px-4 py-2.5 text-xs font-bold flex items-center justify-center gap-2 border" style={{ background: COLORS.card, borderColor: COLORS.border, color: COLORS.textSec }}>
-                <UserPlus size={13} />
-                Add new client
-              </button>
-            </div>
-          </div>
+          </Card>
         </div>
       </div>
     </div>
