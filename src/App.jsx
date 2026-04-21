@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { ForgotPasswordView, LoginView, SignupView } from './components/AuthPages'
 import Footer from './components/Footer'
+import MasterAdminRoutes from './components/adminMaster/MasterAdminRoutes'
 import ProposalBuilderView from './components/ProposalBuilderView'
 import StrategyLibraryView from './components/StrategyLibraryView'
 import TATCaresDashboard from './components/TATCaresDashboard'
@@ -28,6 +29,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<TATCaresDashboard />} />
+        <Route path="/admin-master/*" element={<MasterAdminRoutes />} />
         <Route path="/proposal-builder" element={<ProposalBuilderView />} />
         <Route path="/strategy-library" element={<StrategyLibraryView />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
